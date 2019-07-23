@@ -183,6 +183,25 @@ def update_throw_ratio(projector):
     projector.data.display_size = 1
 
 
+def update_lens_shift(projector):
+    """
+    Apply the shift to the camera and texture.
+    """
+    h_shift = projector.get('h_shift')
+    v_shift = projector.get('v_shift')
+    throw_ratio = projector.get('throw_ratio')
+
+    # Update the properties of the camera.
+    cam = projector
+    cam.data.shift_x = h_shift
+    cam.data.shift_y = v_shift
+
+    # Update the properties of the spotlight.
+    spot = projector.children[0]
+    spot.data.node_tree.nodes['Mapping.001'].translation[0] = h_shift / throw_ratio
+    spot.data.node_tree.nodes['Mapping.001'].translation[1] = v_shift / throw_ratio
+
+
 def update_projector(projector, context):
     """ This function is called to update the projector.
     It gets the properties stored on the camera obj to update the projector.
@@ -221,6 +240,9 @@ def update_projector(projector, context):
     # Update light power
     spot.data.energy = projector["projector_power"]
 
+    # Update Lens Shift
+    update_lens_shift(projector)
+
 
 def create_projector(context):
     """ 
@@ -254,6 +276,8 @@ def create_projector(context):
     cam['throw_ratio'] = 0.8
     cam['projector_power'] = 500.0
     cam['use_img_texture'] = False
+    cam['h_shift'] = 0.0
+    cam['v_shift'] = 0.0
 
     update_throw_ratio(cam)
 
@@ -326,6 +350,12 @@ def register():
         name="Use Img Texture", update=update_projector)
     bpy.types.Object.resolution = bpy.props.EnumProperty(
         items=resolutions, default='1920x1080', description="Select a Resolution for your projector", update=update_projector)
+    
+    shift_limit = 5
+    bpy.types.Object.h_shift = bpy.props.FloatProperty(
+        name="Horizontal Shift", min=-shift_limit, max=shift_limit, update=update_projector)
+    bpy.types.Object.v_shift = bpy.props.FloatProperty(
+        name="Vertical Shift", min=-shift_limit, max=shift_limit, update=update_projector)
 
 
 def unregister():

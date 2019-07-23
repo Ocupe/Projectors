@@ -42,6 +42,11 @@ class PROJECTOR_PT_panel(Panel):
             if not projector.use_img_texture:
                 box.operator('projector.change_color',
                              icon='MODIFIER_ON', text='Random Color')
+            row = box.row(align=True)
+            row.label(text='Lens Shift')
+            box.prop(projector, 'h_shift', text='Horizontal')
+            box.prop(projector, 'v_shift', text='Vertical')
+            
 
 
 def add_to_blender_add_menu(self, context):
