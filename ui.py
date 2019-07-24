@@ -29,6 +29,11 @@ class PROJECTOR_PT_panel(Panel):
         row.operator('projector.delete',
                      text='Remove', icon='REMOVE')
 
+        if context.scene.render.engine == 'BLENDER_EEVEE':
+            box = self.layout.box()
+            box.label(text='Image Projection only works in Cycles.', icon='ERROR')
+            box.operator('projector.switch_to_cycles')
+
         selected_projectors = get_projectors(context, only_selected=True)
         if len(selected_projectors) == 1:
             projector = selected_projectors[0]
@@ -38,15 +43,15 @@ class PROJECTOR_PT_panel(Panel):
             box.prop(projector, 'throw_ratio')
             box.prop(projector, 'projector_power', text='Power')
             box.prop(projector, 'resolution', text='Resolution')
+            # Lens Shift
+            col = box.column(align=True)
+            col.prop(projector, 'h_shift', text='Horizontal Shift')
+            col.prop(projector, 'v_shift', text='Vertical Shift')
+            # Projected Texture
             box.prop(projector, 'use_img_texture', text='Use Image Texture')
             if not projector.use_img_texture:
                 box.operator('projector.change_color',
                              icon='MODIFIER_ON', text='Random Color')
-            row = box.row(align=True)
-            row.label(text='Lens Shift')
-            box.prop(projector, 'h_shift', text='Horizontal')
-            box.prop(projector, 'v_shift', text='Vertical')
-            
 
 
 def add_to_blender_add_menu(self, context):

@@ -5,6 +5,7 @@ import os
 import bpy
 from . import ui
 from . import projector
+from . import operators
 
 bl_info = {
     "name": "Projector",
@@ -23,9 +24,11 @@ log = logging.getLogger(__name__)
 
 def register():
     projector.register()
+    operators.register()
     ui.register()
 
 
 def unregister():
     ui.unregister()
+    operators.unregister()
     projector.unregister()
