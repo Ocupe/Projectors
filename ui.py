@@ -42,7 +42,7 @@ class PROJECTOR_PT_panel(Panel):
             box = self.layout.box()
             box.prop(projector, 'throw_ratio')
             box.prop(projector, 'projector_power', text='Power')
-            box.prop(projector, 'resolution', text='Resolution')
+            box.prop(projector, 'resolution', text='Resolution', icon='PRESET')
             # Lens Shift
             col = box.column(align=True)
             col.prop(projector, 'h_shift', text='Horizontal Shift')
