@@ -1,11 +1,26 @@
 # Projector Add-on for Blender
 Simple projector creation and modification for [Blender](https://www.blender.org/).
 
+![](gifs/Blender&#32;Projectors&#32;Add-on&#32;| Title.jpg)
+
 ## What this Add-on can do for you
-* easy creation and modification of physically based projectors
-* real world projector settings like **throw ratio**, **resolution** and **lens shift**
-* project test textures or your own content like images and videos
-* preview the projections in Cycles render mode (Eevee will be supported when the needed functionality is implemented)  
+* Easy creation and modification of physically based projectors.
+* Real world projector settings like [throw ratio](https://en.wikipedia.org/wiki/Throw_(projector)), [resolution](https://en.wikipedia.org/wiki/Computer_display_standard) and [lens shift](https://www.projectorcentral.com/Understanding-Lens-Offset-and-Lens-Shift.htm).
+* Project test textures or your own content like images and videos.
+* Preview the projections in Cycles render mode (Eevee will be supported when the needed functionality is implemented).
+
+## Projectors Add-on in Action
+#### Throw Ratio
+![Throw Ratio](gifs/Blender&#32;Projectors&#32;Add-on&#32;|&#32;Throw&#32;Ratio.gif)
+
+#### Lens Shift
+![Lens Shift](gifs/Blender&#32;Projectors&#32;Add-on&#32;|&#32;Lens&#32;Shift.gif)
+
+#### Image Textures & Resolution
+![Image Texture & Resolutions](gifs/Blender&#32;Projectors&#32;Add-on&#32;|&#32;Image&#32;Textures&#32;&&#32;Resolution.gif)
+
+#### Random Color
+![Random Color](gifs/Blender&#32;Projectors&#32;Add-on&#32;|&#32;Random&#32;Color.gif)
 
 ## Note
 * works only with Blender 2.8
