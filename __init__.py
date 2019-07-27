@@ -8,13 +8,16 @@ from . import projector
 from . import operators
 
 bl_info = {
+    "version": (0.1.0),
     "name": "Projector",
     "author": "Jonas Schell",
     "description": "Easy Projector creation and modification.",
     "blender": (2, 80, 0),
     "location": "3D Viewport > Add > Light > Projector",
-    "warning": "To see the projected image you have to use the Cycles renderer in rendered mode.",
-    "category": "Lighting"
+    "category": "Lighting",
+    "wiki_url":    "https://github.com/Ocupe/Projectors",
+    "tracker_url": "https://github.com/Ocupe/Projectors/issues",
+
 }
 
 logging.basicConfig(level=logging.DEBUG,

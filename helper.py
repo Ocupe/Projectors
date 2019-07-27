@@ -25,7 +25,7 @@ def random_color():
 
 
 def get_projectors(context, only_selected=False):
-    """ Get all or only the selected projecotrs from the scenen. """
+    """ Get all or only the selected projectors from the scene. """
     objs = context.selected_objects if only_selected else context.scene.objects
     projectors = []
     for obj in objs:

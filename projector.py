@@ -73,7 +73,7 @@ def create_projector_textures():
 def add_projector_node_tree_to_spot(spot):
     """ 
     This function turns a spot light into a projector.
-    This is achived through a texture on the spot light and some basic math. 
+    This is achieved through a texture on the spot light and some basic math. 
     """
 
     spot.data.use_nodes = True
@@ -88,7 +88,7 @@ def add_projector_node_tree_to_spot(spot):
 
     map_1 = nodes.new('ShaderNodeMapping')
     map_1.vector_type = 'TEXTURE'
-    # Flip the image horizontaly and verticaly to display it the intendet way.
+    # Flip the image horizontally and vertically to display it the intended way.
     map_1.scale[0] = -1
     map_1.scale[1] = -1
     map_1.location = auto_pos(200)
@@ -119,7 +119,7 @@ def add_projector_node_tree_to_spot(spot):
     add.inputs[0].default_value = 1
     add.location = auto_pos(350)
 
-    # Texturen
+    # Texture
     # a) Image
     img = nodes.new('ShaderNodeTexImage')
     img.extension = 'CLIP'
@@ -172,7 +172,7 @@ def add_projector_node_tree_to_spot(spot):
 
 def update_throw_ratio(projector):
     """
-    Addust some settings on a camera to achive a throw ratio 
+    Adjust some settings on a camera to achieve a throw ratio 
     """
     throw_ratio = projector.get('throw_ratio')
     distance = 1
@@ -210,7 +210,7 @@ def update_projector(projector, context):
     throw = projector.get("throw_ratio")
     update_throw_ratio(projector)
 
-    # Adujust Texture to fit new camera ###
+    # Adjust Texture to fit new camera ###
     w, h = projector.resolution.split('x')
     w = int(w)
     h = int(h)
@@ -246,8 +246,8 @@ def update_projector(projector, context):
 
 def create_projector(context):
     """ 
-    Create a new projector composed out of a camera (parent obj) and a spotlight (child not intndet for user interaction). 
-    The camera is the object intendet for the user to manipulate and custom properties are stored there.
+    Create a new projector composed out of a camera (parent obj) and a spotlight (child not intended for user interaction). 
+    The camera is the object intended for the user to manipulate and custom properties are stored there.
     The spotlight with a custom nodetree is responsible for actual projection of the texture. 
     """
     create_projector_textures()
