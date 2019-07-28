@@ -4,8 +4,8 @@ Simple projector creation and modification for [Blender](https://www.blender.org
 ![](gifs/Blender&#32;Projectors&#32;Add-on&#32;| Title.jpg)
 
 ## What this Add-on can do for you
-* Easy creation and modification of physically based projectors.
-* Real world projector settings like [throw ratio](https://en.wikipedia.org/wiki/Throw_(projector)), [resolution](https://en.wikipedia.org/wiki/Computer_display_standard) and [lens shift](https://www.projectorcentral.com/Understanding-Lens-Offset-and-Lens-Shift.htm).
+* Easy creation and modification of physically-based projectors.
+* Real-world projector settings like [throw ratio](https://en.wikipedia.org/wiki/Throw_(projector)), [resolution](https://en.wikipedia.org/wiki/Computer_display_standard) and [lens shift](https://www.projectorcentral.com/Understanding-Lens-Offset-and-Lens-Shift.htm).
 * Project test textures or your own content like images and videos.
 * Preview the projections in Cycles render mode (Eevee will be supported when the needed functionality is implemented).
 
@@ -33,6 +33,6 @@ Simple projector creation and modification for [Blender](https://www.blender.org
 * Activate the add-on by clicking on the checkbox.
 
 ## Missing something?
-I'm interested and open for suggestions. Let me know how you use the add-on and how it could improve. Open a issue or message me.
+I'm interested and open to suggestions. Let me know how you use the add-on and how it could improve. Open an issue or message me.
 
 P.S. Germans like to call a projector, a beamer.
