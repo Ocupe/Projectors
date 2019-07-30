@@ -14,13 +14,14 @@ FALLBACK_WARNING = 'Falling back to pre 2.8 Blender Python API: {}'
 ADDON_ID = 'protor_{}'
 
 
-def random_color():
+def random_color(alpha=False):
     """ Return a high contrast random color. """
     h = random()
     s = 1
     v = 1
     rgb = list(colorsys.hsv_to_rgb(h, s, v))
-    rgb.append(1)
+    if alpha:
+        rgb.append(1)
     return rgb
 
 

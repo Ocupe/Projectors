@@ -30,11 +30,17 @@ resolutions = [
 ]
 
 
-def change_texture_color(context, projector):
-    projector.children[0].data.node_tree.nodes['Checker Texture'].inputs['Color2'].default_value = random_color()
+def on_color_change(proj_settings, context):
+    c = proj_settings.projected_color
+    change_texture_color([c.r, c.g, c.b, 1], context.object)
 
 
-class PROJECTOR_OT_change_color(Operator):
+def change_texture_color(rgba, projector):
+    """ Update the color on the spotlight nodetree. """
+    projector.children[0].data.node_tree.nodes['Checker Texture'].inputs['Color2'].default_value = rgba
+
+
+class PROJECTOR_OT_change_color_randomly(Operator):
     """ Randomly change the color of the projected texture."""
     bl_idname = 'projector.change_color'
     bl_label = 'Change color of projection texture'
@@ -46,8 +52,10 @@ class PROJECTOR_OT_change_color(Operator):
 
     def execute(self, context):
         projectors = get_projectors(context, only_selected=True)
+        new_color = random_color(alpha=True)
         for projector in projectors:
-            change_texture_color(context, projector)
+            projector.proj_settings['projected_color'] = new_color[:-1]
+            change_texture_color(new_color, projector)
         return {'FINISHED'}
 
 
@@ -127,7 +135,7 @@ def add_projector_node_tree_to_spot(spot):
 
     # b) Generated checker texture.
     checker_tex = nodes.new('ShaderNodeTexChecker')
-    checker_tex.inputs['Color2'].default_value = random_color()
+    checker_tex.inputs['Color2'].default_value = random_color(alpha=True)
     checker_tex.inputs[3].default_value = 8
     checker_tex.location = auto_pos(y=-300)
 
@@ -279,6 +287,7 @@ def create_projector(context):
     cam.proj_settings.use_img_texture = False
     cam.proj_settings.h_shift = 0.0
     cam.proj_settings.v_shift = 0.0
+    # cam.proj_settings.resolution = resolutions[]
 
     update_throw_ratio(cam)
 
@@ -300,7 +309,7 @@ class PROJECTOR_OT_create(Operator):
 
     def execute(self, context):
         projector = create_projector(context)
-        update_projector(projector, context)
+        update_projector(projector.proj_settings, context)
         return {'FINISHED'}
 
 
@@ -351,20 +360,22 @@ class ProjectorSettings(bpy.types.PropertyGroup):
         name="Horizontal Shift", min=-5, max=5, update=update_projector)
     v_shift: bpy.props.FloatProperty(
         name="Vertical Shift", min=-5, max=5, update=update_projector)
+    projected_color: bpy.props.FloatVectorProperty(
+        subtype='COLOR', update=on_color_change)
 
 
 def register():
     bpy.utils.register_class(ProjectorSettings)
     bpy.utils.register_class(PROJECTOR_OT_create)
     bpy.utils.register_class(PROJECTOR_OT_delete)
-    bpy.utils.register_class(PROJECTOR_OT_change_color)
+    bpy.utils.register_class(PROJECTOR_OT_change_color_randomly)
 
     bpy.types.Object.proj_settings = bpy.props.PointerProperty(
         type=ProjectorSettings,  update=update_projector)
 
 
 def unregister():
-    bpy.utils.unregister_class(PROJECTOR_OT_change_color)
+    bpy.utils.unregister_class(PROJECTOR_OT_change_color_randomly)
     bpy.utils.unregister_class(PROJECTOR_OT_delete)
     bpy.utils.unregister_class(PROJECTOR_OT_create)
     bpy.utils.unregister_class(ProjectorSettings)

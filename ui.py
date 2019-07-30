@@ -20,17 +20,18 @@ class PROJECTOR_PT_panel(Panel):
     bl_category = "Projector"
 
     def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
 
-        self.layout.use_property_split = True
-
-        row = self.layout.row(align=True)
+        row = layout.row(align=True)
         row.operator('projector.create',
                      icon='ADD', text="New")
         row.operator('projector.delete',
                      text='Remove', icon='REMOVE')
 
         if context.scene.render.engine == 'BLENDER_EEVEE':
-            box = self.layout.box()
+            box = layout.box()
             box.label(text='Image Projection only works in Cycles.', icon='ERROR')
             box.operator('projector.switch_to_cycles')
 
@@ -38,8 +39,10 @@ class PROJECTOR_PT_panel(Panel):
         if len(selected_projectors) == 1:
             projector = selected_projectors[0]
 
-            self.layout.label(text='Projector Settings:')
-            box = self.layout.box()
+            layout.separator()
+
+            layout.label(text='Projector Settings:')
+            box = layout.box()
             box.prop(projector.proj_settings, 'throw_ratio')
             box.prop(projector.proj_settings, 'power', text='Power')
             box.prop(projector.proj_settings, 'resolution',
@@ -50,11 +53,32 @@ class PROJECTOR_PT_panel(Panel):
                      'h_shift', text='Horizontal Shift')
             col.prop(projector.proj_settings, 'v_shift', text='Vertical Shift')
             # Projected Texture
-            box.prop(projector.proj_settings, 'use_img_texture',
-                     text='Use Image Texture')
-            if not projector.proj_settings.use_img_texture:
-                box.operator('projector.change_color',
-                             icon='MODIFIER_ON', text='Random Color')
+            layout.prop(projector.proj_settings, 'use_img_texture',
+                        text='Use Image Texture')
+
+
+class PROJECTOR_PT_color(Panel):
+    bl_label = "Projected Color"
+    bl_parent_id = "OBJECT_PT_projector_n_panel"
+    bl_option = {'DEFAULT_CLOSED'}
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+
+    @classmethod
+    def poll(self, context):
+        """ Only draw menu when no image texture is used. """
+        projector = context.object
+        return bool(get_projectors(context, only_selected=True)) and not projector.proj_settings.use_img_texture
+
+    def draw(self, context):
+        projector = context.object
+        layout = self.layout
+        layout.use_property_decorate = False
+        col = layout.column()
+        col.use_property_split = True
+        col.prop(projector.proj_settings, 'projected_color', text='Color')
+        col.operator('projector.change_color',
+                     icon='MODIFIER_ON', text='Random Color')
 
 
 def add_to_blender_add_menu(self, context):
@@ -64,11 +88,13 @@ def add_to_blender_add_menu(self, context):
 
 def register():
     bpy.utils.register_class(PROJECTOR_PT_panel)
+    bpy.utils.register_class(PROJECTOR_PT_color)
     # Register create  in the blender add menu.
     bpy.types.VIEW3D_MT_light_add.append(add_to_blender_add_menu)
 
 
 def unregister():
-    # Register create  in the blender add menu.
+    # Register create in the blender add menu.
     bpy.types.VIEW3D_MT_light_add.remove(add_to_blender_add_menu)
+    bpy.utils.unregister_class(PROJECTOR_PT_color)
     bpy.utils.unregister_class(PROJECTOR_PT_panel)
