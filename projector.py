@@ -174,7 +174,7 @@ def update_throw_ratio(projector):
     """
     Adjust some settings on a camera to achieve a throw ratio 
     """
-    throw_ratio = projector.get('throw_ratio')
+    throw_ratio = projector.proj_settings.get('throw_ratio')
     distance = 1
     alpha = math.atan((distance/throw_ratio)*.5) * 2
     projector.data.lens_unit = 'FOV'
@@ -187,9 +187,9 @@ def update_lens_shift(projector):
     """
     Apply the shift to the camera and texture.
     """
-    h_shift = projector.get('h_shift')
-    v_shift = projector.get('v_shift')
-    throw_ratio = projector.get('throw_ratio')
+    h_shift = projector.proj_settings.get('h_shift')
+    v_shift = projector.proj_settings.get('v_shift')
+    throw_ratio = projector.proj_settings.get('throw_ratio')
 
     # Update the properties of the camera.
     cam = projector
@@ -202,23 +202,24 @@ def update_lens_shift(projector):
     spot.data.node_tree.nodes['Mapping.001'].translation[1] = v_shift / throw_ratio
 
 
-def update_projector(projector, context):
+def update_projector(proj_settings, context):
     """ This function is called to update the projector.
     It gets the properties stored on the camera obj to update the projector.
     """
     # Update throw ratio
-    throw = projector.get("throw_ratio")
+    projector = context.object
+    throw = proj_settings.get("throw_ratio")
     update_throw_ratio(projector)
 
     # Adjust Texture to fit new camera ###
-    w, h = projector.resolution.split('x')
+    w, h = proj_settings.resolution.split('x')
     w = int(w)
     h = int(h)
     aspect_ratio = w/h
     inverted_aspect_ratio = 1/aspect_ratio
 
     try:
-        if projector.use_img_texture:
+        if proj_settings.use_img_texture:
             change_projector_output(True, projector)
         else:
             change_projector_output(False, projector)
@@ -235,10 +236,10 @@ def update_projector(projector, context):
 
     # Change image texture
     spot.data.node_tree.nodes['Image Texture'].image = bpy.data.images['_proj.tex.{}'.format(
-        projector.resolution)]
+        proj_settings.resolution)]
 
     # Update light power
-    spot.data.energy = projector["projector_power"]
+    spot.data.energy = proj_settings["power"]
 
     # Update Lens Shift
     update_lens_shift(projector)
@@ -272,12 +273,12 @@ def create_projector(context):
     cam = context.object
     cam.name = 'Projector'
 
-    # Add custom properties to store projector settings on the camera obj.
-    cam['throw_ratio'] = 0.8
-    cam['projector_power'] = 500.0
-    cam['use_img_texture'] = False
-    cam['h_shift'] = 0.0
-    cam['v_shift'] = 0.0
+    # # Add custom properties to store projector settings on the camera obj.
+    cam.proj_settings.throw_ratio = 0.8
+    cam.proj_settings.power = 500.0
+    cam.proj_settings.use_img_texture = False
+    cam.proj_settings.h_shift = 0.0
+    cam.proj_settings.v_shift = 0.0
 
     update_throw_ratio(cam)
 
@@ -337,28 +338,36 @@ class PROJECTOR_OT_delete(Operator):
         return {'FINISHED'}
 
 
+class ProjectorSettings(bpy.types.PropertyGroup):
+    throw_ratio: bpy.props.FloatProperty(
+        name="Throw Ratio", min=0.01, max=10, update=update_projector)
+    power: bpy.props.FloatProperty(
+        name="Projector Power", min=0, max=999999, update=update_projector)
+    use_img_texture: bpy.props.BoolProperty(
+        name="Use Img Texture", update=update_projector)
+    resolution: bpy.props.EnumProperty(
+        items=resolutions, default='1920x1080', description="Select a Resolution for your projector", update=update_projector)
+    h_shift: bpy.props.FloatProperty(
+        name="Horizontal Shift", min=-5, max=5, update=update_projector)
+    v_shift: bpy.props.FloatProperty(
+        name="Vertical Shift", min=-5, max=5, update=update_projector)
+
+
 def register():
+    bpy.utils.register_class(ProjectorSettings)
     bpy.utils.register_class(PROJECTOR_OT_create)
     bpy.utils.register_class(PROJECTOR_OT_delete)
     bpy.utils.register_class(PROJECTOR_OT_change_color)
 
-    bpy.types.Object.throw_ratio = bpy.props.FloatProperty(
-        name="Throw Ratio", min=0.01, max=10, update=update_projector)
-    bpy.types.Object.projector_power = bpy.props.FloatProperty(
-        name="Projector Power", min=0, max=999999, update=update_projector)
-    bpy.types.Object.use_img_texture = bpy.props.BoolProperty(
-        name="Use Img Texture", update=update_projector)
-    bpy.types.Object.resolution = bpy.props.EnumProperty(
-        items=resolutions, default='1920x1080', description="Select a Resolution for your projector", update=update_projector)
-    
-    shift_limit = 5
-    bpy.types.Object.h_shift = bpy.props.FloatProperty(
-        name="Horizontal Shift", min=-shift_limit, max=shift_limit, update=update_projector)
-    bpy.types.Object.v_shift = bpy.props.FloatProperty(
-        name="Vertical Shift", min=-shift_limit, max=shift_limit, update=update_projector)
+    bpy.types.Object.proj_settings = bpy.props.PointerProperty(
+        type=ProjectorSettings,  update=update_projector)
+
+    # bpy.types.Object.throw_ratio = bpy.props.FloatProperty(
+    # name="Throw Ratio", min=0.01, max=10, update=update_projector)
 
 
 def unregister():
     bpy.utils.unregister_class(PROJECTOR_OT_change_color)
     bpy.utils.unregister_class(PROJECTOR_OT_delete)
     bpy.utils.unregister_class(PROJECTOR_OT_create)
+    bpy.utils.unregister_class(ProjectorSettings)
