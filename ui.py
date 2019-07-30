@@ -42,13 +42,16 @@ class PROJECTOR_PT_panel(Panel):
             box = self.layout.box()
             box.prop(projector.proj_settings, 'throw_ratio')
             box.prop(projector.proj_settings, 'power', text='Power')
-            box.prop(projector.proj_settings, 'resolution', text='Resolution', icon='PRESET')
+            box.prop(projector.proj_settings, 'resolution',
+                     text='Resolution', icon='PRESET')
             # Lens Shift
             col = box.column(align=True)
-            col.prop(projector.proj_settings, 'h_shift', text='Horizontal Shift')
+            col.prop(projector.proj_settings,
+                     'h_shift', text='Horizontal Shift')
             col.prop(projector.proj_settings, 'v_shift', text='Vertical Shift')
             # Projected Texture
-            box.prop(projector.proj_settings, 'use_img_texture', text='Use Image Texture')
+            box.prop(projector.proj_settings, 'use_img_texture',
+                     text='Use Image Texture')
             if not projector.proj_settings.use_img_texture:
                 box.operator('projector.change_color',
                              icon='MODIFIER_ON', text='Random Color')

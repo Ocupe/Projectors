@@ -362,9 +362,6 @@ def register():
     bpy.types.Object.proj_settings = bpy.props.PointerProperty(
         type=ProjectorSettings,  update=update_projector)
 
-    # bpy.types.Object.throw_ratio = bpy.props.FloatProperty(
-    # name="Throw Ratio", min=0.01, max=10, update=update_projector)
-
 
 def unregister():
     bpy.utils.unregister_class(PROJECTOR_OT_change_color)
