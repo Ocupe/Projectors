@@ -195,8 +195,8 @@ def update_lens_shift(projector):
     """
     Apply the shift to the camera and texture.
     """
-    h_shift = projector.proj_settings.get('h_shift')
-    v_shift = projector.proj_settings.get('v_shift')
+    h_shift = projector.proj_settings.get('h_shift') / 100
+    v_shift = projector.proj_settings.get('v_shift') / 100
     throw_ratio = projector.proj_settings.get('throw_ratio')
 
     # Update the properties of the camera.
@@ -349,17 +349,17 @@ class PROJECTOR_OT_delete(Operator):
 
 class ProjectorSettings(bpy.types.PropertyGroup):
     throw_ratio: bpy.props.FloatProperty(
-        name="Throw Ratio", min=0.01, max=10, update=update_projector)
+        name="Throw Ratio", soft_min=0.4, soft_max=3, update=update_projector, subtype='FACTOR')
     power: bpy.props.FloatProperty(
-        name="Projector Power", min=0, max=999999, update=update_projector)
+        name="Projector Power", soft_min=0, soft_max=999999, update=update_projector, unit='POWER')
     use_img_texture: bpy.props.BoolProperty(
         name="Use Img Texture", update=update_projector)
     resolution: bpy.props.EnumProperty(
         items=resolutions, default='1920x1080', description="Select a Resolution for your projector", update=update_projector)
     h_shift: bpy.props.FloatProperty(
-        name="Horizontal Shift", min=-5, max=5, update=update_projector)
+        name="Horizontal Shift", soft_min=-20, soft_max=20, update=update_projector, subtype='PERCENTAGE')
     v_shift: bpy.props.FloatProperty(
-        name="Vertical Shift", min=-5, max=5, update=update_projector)
+        name="Vertical Shift", soft_min=-20, soft_max=20, update=update_projector, subtype='PERCENTAGE')
     projected_color: bpy.props.FloatVectorProperty(
         subtype='COLOR', update=on_color_change)
 

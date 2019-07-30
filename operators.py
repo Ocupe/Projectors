@@ -11,10 +11,11 @@ class PROJECTOR_OT_switch_to_cycles(Operator):
     def execute(self, context):
         context.scene.render.engine = 'CYCLES'
         return {'FINISHED'}
-        
+
 
 def register():
     bpy.utils.register_class(PROJECTOR_OT_switch_to_cycles)
+
 
 def unregister():
     bpy.utils.unregister_class(PROJECTOR_OT_switch_to_cycles)
