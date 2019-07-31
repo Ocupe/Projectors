@@ -12,7 +12,7 @@ bl_info = {
     "author": "Jonas Schell",
     "description": "Easy Projector creation and modification.",
     "blender": (2, 80, 0),
-    "version": (0, 1, 1),
+    "version": (0, 2, 0),
     "location": "3D Viewport > Add > Light > Projector",
     "category": "Lighting",
     "wiki_url": "https://github.com/Ocupe/Projectors/wiki",
