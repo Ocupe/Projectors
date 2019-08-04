@@ -2,17 +2,10 @@ from .helper import get_projectors
 from .projector import resolutions
 
 import bpy
-
 from bpy.types import Panel, PropertyGroup, UIList, Operator
-from bpy.props import StringProperty
-import logging
-log = logging.getLogger(__file__)
-
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)-15s %(levelname)8s %(name)s %(message)s')
 
 
-class PROJECTOR_PT_panel(Panel):
+class PROJECTOR_PT_projector_settings(Panel):
     bl_idname = 'OBJECT_PT_projector_n_panel'
     bl_label = 'Projector'
     bl_space_type = "VIEW_3D"
@@ -52,12 +45,18 @@ class PROJECTOR_PT_panel(Panel):
             col.prop(projector.proj_settings,
                      'h_shift', text='Horizontal Shift')
             col.prop(projector.proj_settings, 'v_shift', text='Vertical Shift')
-            # Projected Texture
-            layout.prop(projector.proj_settings, 'use_img_texture',
-                        text='Use Image Texture')
+            layout.prop(projector.proj_settings,
+                        'projected_texture', text='Project')
+
+            # Custom Texture
+            if projector.proj_settings.projected_texture == 'user_texture':
+                box = layout.box()
+                node = get_projectors(context, only_selected=True)[
+                    0].children[0].data.node_tree.nodes['Image Texture']
+                box.template_image(node, 'image', node.image_user)
 
 
-class PROJECTOR_PT_color(Panel):
+class PROJECTOR_PT_projected_color(Panel):
     bl_label = "Projected Color"
     bl_parent_id = "OBJECT_PT_projector_n_panel"
     bl_option = {'DEFAULT_CLOSED'}
@@ -66,9 +65,9 @@ class PROJECTOR_PT_color(Panel):
 
     @classmethod
     def poll(self, context):
-        """ Only draw menu when no image texture is used. """
+        """ Only show if projected texture is set to  'checker'."""
         projector = context.object
-        return bool(get_projectors(context, only_selected=True)) and not projector.proj_settings.use_img_texture
+        return bool(get_projectors(context, only_selected=True)) and projector.proj_settings.projected_texture == 'checker_texture'
 
     def draw(self, context):
         projector = context.object
@@ -81,20 +80,20 @@ class PROJECTOR_PT_color(Panel):
                      icon='MODIFIER_ON', text='Random Color')
 
 
-def add_to_blender_add_menu(self, context):
+def append_to_add_menu(self, context):
     self.layout.operator('projector.create',
                          text='Projector', icon='CAMERA_DATA')
 
 
 def register():
-    bpy.utils.register_class(PROJECTOR_PT_panel)
-    bpy.utils.register_class(PROJECTOR_PT_color)
+    bpy.utils.register_class(PROJECTOR_PT_projector_settings)
+    bpy.utils.register_class(PROJECTOR_PT_projected_color)
     # Register create  in the blender add menu.
-    bpy.types.VIEW3D_MT_light_add.append(add_to_blender_add_menu)
+    bpy.types.VIEW3D_MT_light_add.append(append_to_add_menu)
 
 
 def unregister():
     # Register create in the blender add menu.
-    bpy.types.VIEW3D_MT_light_add.remove(add_to_blender_add_menu)
-    bpy.utils.unregister_class(PROJECTOR_PT_color)
-    bpy.utils.unregister_class(PROJECTOR_PT_panel)
+    bpy.types.VIEW3D_MT_light_add.remove(append_to_add_menu)
+    bpy.utils.unregister_class(PROJECTOR_PT_projected_color)
+    bpy.utils.unregister_class(PROJECTOR_PT_projector_settings)

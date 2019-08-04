@@ -6,7 +6,7 @@ import bpy
 from bpy.types import Operator
 
 from .helper import (ADDON_ID, auto_offset,
-                     get_projectors, random_color)
+                     get_projectors, get_projector, random_color)
 
 log = logging.getLogger(name=__file__)
 
@@ -29,6 +29,10 @@ resolutions = [
     ('4096x2160', 'Native 4K (4096x2160) 17:9', '', 11)
 ]
 
+PROJECTED_OUTPUTS = [('checker_texture', 'Checker', '', 1),
+                     ('color_grid', 'Color Grid', '', 2),
+                     ('user_texture', 'Custom Texture', '', 3)]
+
 
 class PROJECTOR_OT_change_color_randomly(Operator):
     """ Randomly change the color of the projected texture."""
@@ -45,13 +49,13 @@ class PROJECTOR_OT_change_color_randomly(Operator):
         new_color = random_color(alpha=True)
         for projector in projectors:
             projector.proj_settings['projected_color'] = new_color[:-1]
-            update_projector(projector.proj_settings, context)
+            update_checker_color(projector.proj_settings, context)
         return {'FINISHED'}
 
 
 def create_projector_textures():
     """ This function checks if the needed images exist and if not creates them. """
-    log.info('Adding new Images')
+    log.info('Create needed projection textures.')
     name_template = '_proj.tex.{}'
     for res in resolutions:
         img_name = name_template.format(res[0])
@@ -69,17 +73,34 @@ def create_projector_textures():
 
 
 def add_projector_node_tree_to_spot(spot):
-    """ 
+    """
     This function turns a spot light into a projector.
-    This is achieved through a texture on the spot light and some basic math. 
+    This is achieved through a texture on the spot light and some basic math.
     """
 
     spot.data.use_nodes = True
-    tree = spot.data.node_tree
-    tree.nodes.clear()
+    root_tree = spot.data.node_tree
+    root_tree.nodes.clear()
+
+    node_group = bpy.data.node_groups.new('_Projector', 'ShaderNodeTree')
+
+    # Create output sockets for the node group.
+    output = node_group.outputs
+    output.new('NodeSocketVector', 'texture vector')
+    output.new('NodeSocketColor', 'color')
+
+    # # Inside Group Node #
+    # #####################
+
+    # Hold important nodes inside a group node.
+    group = spot.data.node_tree.nodes.new('ShaderNodeGroup')
+    group.node_tree = node_group
+    group.label = "!! Don't touch !!"
+
+    nodes = group.node_tree.nodes
+    tree = group.node_tree
 
     auto_pos = auto_offset()
-    nodes = tree.nodes
 
     tex = nodes.new('ShaderNodeTexCoord')
     tex.location = auto_pos(200)
@@ -127,21 +148,36 @@ def add_projector_node_tree_to_spot(spot):
     checker_tex = nodes.new('ShaderNodeTexChecker')
     # checker_tex.inputs['Color2'].default_value = random_color(alpha=True)
     checker_tex.inputs[3].default_value = 8
+    checker_tex.inputs[1].default_value = (1, 1, 1, 1)
     checker_tex.location = auto_pos(y=-300)
 
     mix_rgb = nodes.new('ShaderNodeMixRGB')
     mix_rgb.inputs[1].default_value = (0, 0, 0, 0)
     mix_rgb.location = auto_pos(200, y=-300)
 
+    group_output_node = node_group.nodes.new('NodeGroupOutput')
+    group_output_node.location = auto_pos(200)
+
+    # # Root Nodes #
+    # ##############
+    auto_pos_root = auto_offset()
+    # Image Texture
+    user_texture = root_tree.nodes.new('ShaderNodeTexImage')
+    user_texture.extension = 'CLIP'
+    user_texture.label = 'Add your Image Texture or Movie here'
+    user_texture.location = auto_pos_root(200, y=200)
     # Emission
-    emission = nodes.new('ShaderNodeEmission')
+    emission = root_tree.nodes.new('ShaderNodeEmission')
     emission.inputs['Strength'].default_value = 1
-    emission.location = auto_pos(100)
+    emission.location = auto_pos_root(300)
+    # Material Output
+    output = root_tree.nodes.new('ShaderNodeOutputLight')
+    output.location = auto_pos_root(200)
 
-    output = nodes.new('ShaderNodeOutputLight')
-    output.location = auto_pos(200)
+    # # LINK NODES #
+    # ##############
 
-    # ### LINK NODES ###
+    # Link inside group node
     tree.links.new(tex.outputs['Normal'], map_1.inputs['Vector'])
     tree.links.new(map_1.outputs['Vector'], sep.inputs['Vector'])
 
@@ -156,23 +192,28 @@ def add_projector_node_tree_to_spot(spot):
     tree.links.new(com.outputs['Vector'], map_2.inputs['Vector'])
 
     # Textures
-    # a)
+    # a) generated texture
     tree.links.new(map_2.outputs['Vector'], add.inputs['Color1'])
     tree.links.new(add.outputs['Color'], img.inputs['Vector'])
-    # b)
-    tree.links.new(map_2.outputs['Vector'], checker_tex.inputs['Vector'])
+    tree.links.new(add.outputs['Color'], group_output_node.inputs[0])
+    # b) checker texture
+    tree.links.new(add.outputs['Color'], checker_tex.inputs['Vector'])
     tree.links.new(img.outputs['Alpha'], mix_rgb.inputs[0])
     tree.links.new(checker_tex.outputs['Color'], mix_rgb.inputs[2])
 
-    tree.links.new(img.outputs['Color'], emission.inputs['Color'])
-    tree.links.new(emission.outputs['Emission'], output.inputs['Surface'])
+    # Link in root
+    root_tree.links.new(group.outputs[0], user_texture.inputs['Vector'])
+    root_tree.links.new(group.outputs[1], emission.inputs['Color'])
+    root_tree.links.new(emission.outputs['Emission'], output.inputs['Surface'])
 
 
-def update_throw_ratio(projector):
+def update_throw_ratio(proj_settings, context):
     """
-    Adjust some settings on a camera to achieve a throw ratio 
+    Adjust some settings on a camera to achieve a throw ratio
     """
-    throw_ratio = projector.proj_settings.get('throw_ratio')
+    projector = get_projector(context)
+    # Update properties of the camera.
+    throw_ratio = proj_settings.get('throw_ratio')
     distance = 1
     alpha = math.atan((distance/throw_ratio)*.5) * 2
     projector.data.lens_unit = 'FOV'
@@ -180,79 +221,69 @@ def update_throw_ratio(projector):
     projector.data.sensor_width = 10
     projector.data.display_size = 1
 
+    # Adjust Texture to fit new camera ###
+    w, h = proj_settings.resolution.split('x')
+    aspect_ratio = int(w)/int(h)
+    inverted_aspect_ratio = 1/aspect_ratio
 
-def update_lens_shift(projector):
+    # Projected Texture
+    update_projected_texture(proj_settings, context)
+
+    # Update spotlight properties.
+    spot = projector.children[0]
+    nodes = spot.data.node_tree.nodes['Group'].node_tree.nodes
+    nodes['Mapping.001'].scale[0] = 1 / throw_ratio
+    nodes['Mapping.001'].scale[1] = 1 / throw_ratio * inverted_aspect_ratio
+
+
+def update_lens_shift(proj_settings, context):
     """
     Apply the shift to the camera and texture.
     """
-    h_shift = projector.proj_settings.get('h_shift') / 100
-    v_shift = projector.proj_settings.get('v_shift') / 100
-    throw_ratio = projector.proj_settings.get('throw_ratio')
+    projector = get_projector(context)
+    h_shift = proj_settings.get('h_shift', 0.0) / 100
+    v_shift = proj_settings.get('v_shift', 0.0) / 100
+    throw_ratio = proj_settings.get('throw_ratio')
 
     # Update the properties of the camera.
     cam = projector
     cam.data.shift_x = h_shift
     cam.data.shift_y = v_shift
 
-    # Update the properties of the spotlight.
+    # Update spotlight node setup.
     spot = projector.children[0]
-    spot.data.node_tree.nodes['Mapping.001'].translation[0] = h_shift / throw_ratio
-    spot.data.node_tree.nodes['Mapping.001'].translation[1] = v_shift / throw_ratio
+    nodes = spot.data.node_tree.nodes['Group'].node_tree.nodes
+    nodes['Mapping.001'].translation[0] = h_shift / throw_ratio
+    nodes['Mapping.001'].translation[1] = v_shift / throw_ratio
 
 
-def update_projector(proj_settings, context):
-    """ This function is called to update the projector.
-    It gets the properties stored on the camera obj to update the projector.
-    """
-    # Update throw ratio
+def update_resolution(proj_settings, context):
     projector = context.object
-    throw = proj_settings.get("throw_ratio")
-    update_throw_ratio(projector)
+    nodes = projector.children[0].data.node_tree.nodes['Group'].node_tree.nodes
+    # Change resolution image texture
+    nodes['Image Texture'].image = bpy.data.images[f'_proj.tex.{proj_settings.resolution}']
+    update_throw_ratio(proj_settings, context)
 
-    # Adjust Texture to fit new camera ###
-    w, h = proj_settings.resolution.split('x')
-    w = int(w)
-    h = int(h)
-    aspect_ratio = w/h
-    inverted_aspect_ratio = 1/aspect_ratio
 
-    try:
-        if proj_settings.use_img_texture:
-            change_projector_output(True, projector)
-        else:
-            change_projector_output(False, projector)
-    except Exception as e:
-        log.warning(
-            'Projector: {} has a problem rebuilding the node_tree of spot. {}'.format(projector.name, e))
-        add_projector_node_tree_to_spot(projector.children[0])
-
-    spot = projector.children[0]
-    spot.data.node_tree.nodes['Mapping.001'].scale[0] = 1 / \
-        throw
-    spot.data.node_tree.nodes['Mapping.001'].scale[1] = 1 / \
-        throw * inverted_aspect_ratio
-
-    # Change image texture
-    spot.data.node_tree.nodes['Image Texture'].image = bpy.data.images['_proj.tex.{}'.format(
-        proj_settings.resolution)]
-
+def update_checker_color(proj_settings, context):
     # Update checker texture color
+    nodes = get_projector(
+        context).children[0].data.node_tree.nodes['Group'].node_tree.nodes
     c = proj_settings.projected_color
-    projector.children[0].data.node_tree.nodes['Checker Texture'].inputs['Color2'].default_value = [
-        c.r, c.g, c.b, 1]
+    nodes['Checker Texture'].inputs['Color2'].default_value = [c.r, c.g, c.b, 1]
 
-    # Update light power
+
+def update_power(proj_settings, context):
+    # Update spotlight power
+    spot = get_projector(context).children[0]
     spot.data.energy = proj_settings["power"]
-
-    # Update Lens Shift
-    update_lens_shift(projector)
 
 
 def create_projector(context):
-    """ 
-    Create a new projector composed out of a camera (parent obj) and a spotlight (child not intended for user interaction). 
+    """
+    Create a new projector composed out of a camera (parent obj) and a spotlight (child not intended for user interaction).
     The camera is the object intended for the user to manipulate and custom properties are stored there.
-    The spotlight with a custom nodetree is responsible for actual projection of the texture. 
+    The spotlight with a custom nodetree is responsible for actual projection of the texture.
     """
     create_projector_textures()
 
@@ -272,32 +303,39 @@ def create_projector(context):
 
     # ### Camera ###
     bpy.ops.object.camera_add(enter_editmode=False,
-                              location=(0, 0, 0), rotation=(0, 0, 0))
+                              location=(0, 0, 0),
+                              rotation=(0, 0, 0))
     cam = context.object
     cam.name = 'Projector'
-
-    # # Add custom properties to store projector settings on the camera obj.
-    cam.proj_settings.throw_ratio = 0.8
-    cam.proj_settings.power = 500.0
-    cam.proj_settings.use_img_texture = False
-    cam.proj_settings.h_shift = 0.0
-    cam.proj_settings.v_shift = 0.0
-    cam.proj_settings.projected_color = random_color()
-    # cam.proj_settings.resolution = resolutions[]
-
-    update_throw_ratio(cam)
 
     # Parent light to cam.
     spot.parent = cam
 
-    # Move newly create projector (cam and spotlight) to 3D cursor position.
+    # Move newly create projector (cam and spotlight) to 3D-Cursor position.
     cam.location = context.scene.cursor.location
     cam.rotation_euler = context.scene.cursor.rotation_euler
-
     return cam
 
 
-class PROJECTOR_OT_create(Operator):
+def init_projector(proj_settings, context):
+    # # Add custom properties to store projector settings on the camera obj.
+    proj_settings.throw_ratio = 0.8
+    proj_settings.power = 500.0
+    proj_settings.projected_texture = 'checker_texture'
+    proj_settings.h_shift = 0.0
+    proj_settings.v_shift = 0.0
+    proj_settings.projected_color = random_color()
+
+    # Init Projector
+    update_throw_ratio(proj_settings, context)
+    update_projected_texture(proj_settings, context)
+    update_resolution(proj_settings, context)
+    update_checker_color(proj_settings, context)
+    update_lens_shift(proj_settings, context)
+    update_power(proj_settings, context)
+
+
+class PROJECTOR_OT_create_projector(Operator):
     """ Create Projector """
     bl_idname = 'projector.create'
     bl_label = 'Create a new Projector'
@@ -305,26 +343,37 @@ class PROJECTOR_OT_create(Operator):
 
     def execute(self, context):
         projector = create_projector(context)
-        update_projector(projector.proj_settings, context)
+        init_projector(projector.proj_settings, context)
         return {'FINISHED'}
 
 
-def change_projector_output(use_img, projector):
-    """ Toggle between image and generated checker texture. """
-    tree = projector.children[0].data.node_tree
-    img_node = tree.nodes['Image Texture']
-    mix_node = tree.nodes['Mix.001']
-    emission_node = tree.nodes['Emission']
+def update_projected_texture(proj_settings, context):
+    """ Update the projected output source. """
+    projector = get_projectors(context, only_selected=True)[0]
+    root_tree = projector.children[0].data.node_tree
+    group_tree = root_tree.nodes['Group'].node_tree
+    group_output_node = group_tree.nodes['Group Output']
+    group_node = root_tree.nodes['Group']
+    emission_node = root_tree.nodes['Emission']
 
-    if use_img:
-        tree.links.new(
-            img_node.outputs['Color'], emission_node.inputs['Color'])
-    else:
-        tree.links.new(
-            mix_node.outputs['Color'], emission_node.inputs['Color'])
+    # Switch between the three possible cases by relinking some nodes.
+    case = proj_settings.projected_texture
+    if case == 'checker_texture':
+        mix_node = group_tree.nodes['Mix.001']
+        group_tree.links.new(
+            mix_node.outputs['Color'], group_output_node.inputs[1])
+        root_tree.links.new(group_node.outputs[1], emission_node.inputs[0])
+    elif case == 'color_grid':
+        img_node = group_tree.nodes['Image Texture']
+        group_tree.links.new(img_node.outputs[0], group_output_node.inputs[1])
+        root_tree.links.new(group_node.outputs[1], emission_node.inputs[0])
+    elif case == 'user_texture':
+        custom_tex_node = root_tree.nodes['Image Texture']
+        root_tree.links.new(
+            custom_tex_node.outputs[0], emission_node.inputs[0])
 
 
-class PROJECTOR_OT_delete(Operator):
+class PROJECTOR_OT_delete_projector(Operator):
     bl_idname = 'projector.delete'
     bl_label = 'Delete Projector'
     bl_options = {'REGISTER', 'UNDO'}
@@ -345,33 +394,54 @@ class PROJECTOR_OT_delete(Operator):
 
 class ProjectorSettings(bpy.types.PropertyGroup):
     throw_ratio: bpy.props.FloatProperty(
-        name="Throw Ratio", soft_min=0.4, soft_max=3, update=update_projector, subtype='FACTOR')
+        name="Throw Ratio",
+        soft_min=0.4, soft_max=3,
+        update=update_throw_ratio,
+        subtype='FACTOR')
     power: bpy.props.FloatProperty(
-        name="Projector Power", soft_min=0, soft_max=999999, update=update_projector, unit='POWER')
-    use_img_texture: bpy.props.BoolProperty(
-        name="Use Img Texture", update=update_projector)
+        name="Projector Power",
+        soft_min=0, soft_max=999999,
+        update=update_power,
+        unit='POWER')
     resolution: bpy.props.EnumProperty(
-        items=resolutions, default='1920x1080', description="Select a Resolution for your projector", update=update_projector)
+        items=resolutions,
+        default='1920x1080',
+        description="Select a Resolution for your Projector",
+        update=update_resolution)
     h_shift: bpy.props.FloatProperty(
-        name="Horizontal Shift", soft_min=-20, soft_max=20, update=update_projector, subtype='PERCENTAGE')
+        name="Horizontal Shift",
+        description="Horizontal Lens Shift",
+        soft_min=-20, soft_max=20,
+        update=update_lens_shift,
+        subtype='PERCENTAGE')
     v_shift: bpy.props.FloatProperty(
-        name="Vertical Shift", soft_min=-20, soft_max=20, update=update_projector, subtype='PERCENTAGE')
+        name="Vertical Shift",
+        description="Vertical Lens Shift",
+        soft_min=-20, soft_max=20,
+        update=update_lens_shift,
+        subtype='PERCENTAGE')
     projected_color: bpy.props.FloatVectorProperty(
-        subtype='COLOR', update=update_projector)
+        subtype='COLOR',
+        update=update_checker_color)
+    projected_texture: bpy.props.EnumProperty(
+        items=PROJECTED_OUTPUTS,
+        default='checker_texture',
+        description="What do you to project?",
+        update=update_projected_texture
+    )
 
 
 def register():
     bpy.utils.register_class(ProjectorSettings)
-    bpy.utils.register_class(PROJECTOR_OT_create)
-    bpy.utils.register_class(PROJECTOR_OT_delete)
+    bpy.utils.register_class(PROJECTOR_OT_create_projector)
+    bpy.utils.register_class(PROJECTOR_OT_delete_projector)
     bpy.utils.register_class(PROJECTOR_OT_change_color_randomly)
-
     bpy.types.Object.proj_settings = bpy.props.PointerProperty(
-        type=ProjectorSettings,  update=update_projector)
+        type=ProjectorSettings)
 
 
 def unregister():
     bpy.utils.unregister_class(PROJECTOR_OT_change_color_randomly)
-    bpy.utils.unregister_class(PROJECTOR_OT_delete)
-    bpy.utils.unregister_class(PROJECTOR_OT_create)
+    bpy.utils.unregister_class(PROJECTOR_OT_delete_projector)
+    bpy.utils.unregister_class(PROJECTOR_OT_create_projector)
     bpy.utils.unregister_class(ProjectorSettings)

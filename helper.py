@@ -39,12 +39,23 @@ def get_projectors(context, only_selected=False):
     return projectors
 
 
+def get_projector(context):
+    """ Return selected Projector or None if no projector is selected. """
+    projectors = get_projectors(context, only_selected=True)
+    if len(projectors) == 1:
+        return projectors[0]
+    else:
+        return None
+
+
 def auto_offset():
     offset = 0
 
-    def inner(add_this=None, y=None):
+    def inner(node_width=None, y=None, gap=None):
         nonlocal offset
-        offset += add_this if add_this else 0
+        offset += node_width if node_width else 0
         y = y if y else 0
+        gap = gap if gap else 60
+        offset += gap
         return offset, y
     return inner
