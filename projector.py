@@ -2,14 +2,21 @@ import logging
 import math
 import os
 
+from enum import Enum
 import bpy
 from bpy.types import Operator
 
 from .helper import (ADDON_ID, auto_offset,
                      get_projectors, get_projector, random_color)
 
+logging.basicConfig(
+    format='[Projectors Addon]: %(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(name=__file__)
 
+class ProjTexture(Enum):
+    CHECKER = 'checker_texture'
+    COLOR_GRID = 'color_grid'
+    CUSTOM_TEXTURE = 'user_texture'
 
 resolutions = [
     # 16:10 aspect ratio
@@ -26,7 +33,9 @@ resolutions = [
     ('1400x1050', 'SXGA+ (1400x1050) 4:3', '', 9),
     ('1600x1200', 'UXGA (1600x1200) 4:3', '', 10),
     # 17:9 aspect ratio
-    ('4096x2160', 'Native 4K (4096x2160) 17:9', '', 11)
+    ('4096x2160', 'Native 4K (4096x2160) 17:9', '', 11),
+    # 1:1 ascpect ratio
+    ('1000x1000', 'Square (1000x1000) 1:1', '', 12)
 ]
 
 PROJECTED_OUTPUTS = [('checker_texture', 'Checker', '', 1),
@@ -35,9 +44,9 @@ PROJECTED_OUTPUTS = [('checker_texture', 'Checker', '', 1),
 
 
 class PROJECTOR_OT_change_color_randomly(Operator):
-    """ Randomly change the color of the projected texture."""
+    """ Randomly change the color of the projected checker texture."""
     bl_idname = 'projector.change_color'
-    bl_label = 'Change color of projection texture'
+    bl_label = 'Change color of projection checker texture'
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -207,6 +216,25 @@ def add_projector_node_tree_to_spot(spot):
     root_tree.links.new(emission.outputs['Emission'], output.inputs['Surface'])
 
 
+def get_resolution(proj_settings, context):
+    """ Find out what resolution is currently used and return it.
+    Resolution from the dropdown or the resolution from the custom texture.
+    """
+    if proj_settings.use_custom_texture_res and proj_settings.projected_texture == ProjTexture.CUSTOM_TEXTURE.value:
+        projector = get_projector(context)
+        root_tree = projector.children[0].data.node_tree
+        image = root_tree.nodes['Image Texture'].image
+        if image:
+            w = image.size[0]
+            h = image.size[1]
+        else:
+            w, h = 300, 300
+    else:
+        w, h = proj_settings.resolution.split('x')
+
+    return float(w), float(h)
+
+
 def update_throw_ratio(proj_settings, context):
     """
     Adjust some settings on a camera to achieve a throw ratio
@@ -222,8 +250,8 @@ def update_throw_ratio(proj_settings, context):
     projector.data.display_size = 1
 
     # Adjust Texture to fit new camera ###
-    w, h = proj_settings.resolution.split('x')
-    aspect_ratio = int(w)/int(h)
+    w, h = get_resolution(proj_settings, context)
+    aspect_ratio = w/h
     inverted_aspect_ratio = 1/aspect_ratio
 
     # Projected Texture
@@ -258,7 +286,7 @@ def update_lens_shift(proj_settings, context):
 
 
 def update_resolution(proj_settings, context):
-    projector = context.object
+    projector = get_projector(context)
     nodes = projector.children[0].data.node_tree.nodes['Group'].node_tree.nodes
     # Change resolution image texture
     nodes['Image Texture'].image = bpy.data.images[f'_proj.tex.{proj_settings.resolution}']
@@ -286,6 +314,7 @@ def create_projector(context):
     The spotlight with a custom nodetree is responsible for actual projection of the texture.
     """
     create_projector_textures()
+    log.debug('Creating projector.')
 
     # Create a camera and a spotlight
     # ### Spot Light ###
@@ -320,7 +349,7 @@ def create_projector(context):
 def init_projector(proj_settings, context):
     # # Add custom properties to store projector settings on the camera obj.
     proj_settings.throw_ratio = 0.8
-    proj_settings.power = 500.0
+    proj_settings.power = 1000.0
     proj_settings.projected_texture = 'checker_texture'
     proj_settings.h_shift = 0.0
     proj_settings.v_shift = 0.0
@@ -408,6 +437,11 @@ class ProjectorSettings(bpy.types.PropertyGroup):
         default='1920x1080',
         description="Select a Resolution for your Projector",
         update=update_resolution)
+    use_custom_texture_res: bpy.props.BoolProperty(
+        name="Let Image Define Projector Resolution",
+        default=True,
+        description="Use the resolution from the image as the projector resolution. Warning: After selecting a new image toggle this checkbox to update",
+        update=update_throw_ratio)
     h_shift: bpy.props.FloatProperty(
         name="Horizontal Shift",
         description="Horizontal Lens Shift",
@@ -427,7 +461,7 @@ class ProjectorSettings(bpy.types.PropertyGroup):
         items=PROJECTED_OUTPUTS,
         default='checker_texture',
         description="What do you to project?",
-        update=update_projected_texture
+        update=update_throw_ratio
     )
 
 

@@ -31,29 +31,38 @@ class PROJECTOR_PT_projector_settings(Panel):
         selected_projectors = get_projectors(context, only_selected=True)
         if len(selected_projectors) == 1:
             projector = selected_projectors[0]
+            proj_settings = projector.proj_settings
 
             layout.separator()
 
             layout.label(text='Projector Settings:')
             box = layout.box()
-            box.prop(projector.proj_settings, 'throw_ratio')
-            box.prop(projector.proj_settings, 'power', text='Power')
-            box.prop(projector.proj_settings, 'resolution',
-                     text='Resolution', icon='PRESET')
+            box.prop(proj_settings, 'throw_ratio')
+            box.prop(proj_settings, 'power', text='Power')
+            res_row = box.row()
+            res_row.prop(proj_settings, 'resolution',
+                              text='Resolution', icon='PRESET')
+            if proj_settings.projected_texture == 'user_texture' and proj_settings.use_custom_texture_res:
+                res_row.active = False
+                res_row.enabled = False
+            else:
+                res_row.active = True
+                res_row.enabled = True
             # Lens Shift
             col = box.column(align=True)
-            col.prop(projector.proj_settings,
+            col.prop(proj_settings,
                      'h_shift', text='Horizontal Shift')
-            col.prop(projector.proj_settings, 'v_shift', text='Vertical Shift')
-            layout.prop(projector.proj_settings,
+            col.prop(proj_settings, 'v_shift', text='Vertical Shift')
+            layout.prop(proj_settings,
                         'projected_texture', text='Project')
 
             # Custom Texture
-            if projector.proj_settings.projected_texture == 'user_texture':
+            if proj_settings.projected_texture == 'user_texture':
                 box = layout.box()
+                box.prop(proj_settings, 'use_custom_texture_res')
                 node = get_projectors(context, only_selected=True)[
                     0].children[0].data.node_tree.nodes['Image Texture']
-                box.template_image(node, 'image', node.image_user)
+                box.template_image(node, 'image', node.image_user, compact=True)
 
 
 class PROJECTOR_PT_projected_color(Panel):
