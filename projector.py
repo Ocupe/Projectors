@@ -53,7 +53,7 @@ class PROJECTOR_OT_change_color_randomly(Operator):
 
     @classmethod
     def poll(cls, context):
-        return bool(get_projectors(context, only_selected=True))
+        return len(get_projectors(context, only_selected=True)) == 1
 
     def execute(self, context):
         projectors = get_projectors(context, only_selected=True)
