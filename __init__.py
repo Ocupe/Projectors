@@ -6,7 +6,6 @@ import bpy
 from . import ui
 from . import projector
 from . import operators
-from . import tests
 
 bl_info = {
     "name": "Projector",
@@ -29,11 +28,9 @@ def register():
     projector.register()
     operators.register()
     ui.register()
-    tests.register()
 
 
 def unregister():
-    tests.unregister()
     ui.unregister()
     operators.unregister()
     projector.unregister()

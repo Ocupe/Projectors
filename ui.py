@@ -41,7 +41,7 @@ class PROJECTOR_PT_projector_settings(Panel):
             box.prop(proj_settings, 'power', text='Power')
             res_row = box.row()
             res_row.prop(proj_settings, 'resolution',
-                              text='Resolution', icon='PRESET')
+                         text='Resolution', icon='PRESET')
             if proj_settings.projected_texture == 'user_texture' and proj_settings.use_custom_texture_res:
                 res_row.active = False
                 res_row.enabled = False
@@ -62,7 +62,8 @@ class PROJECTOR_PT_projector_settings(Panel):
                 box.prop(proj_settings, 'use_custom_texture_res')
                 node = get_projectors(context, only_selected=True)[
                     0].children[0].data.node_tree.nodes['Image Texture']
-                box.template_image(node, 'image', node.image_user, compact=True)
+                box.template_image(
+                    node, 'image', node.image_user, compact=True)
 
 
 class PROJECTOR_PT_projected_color(Panel):

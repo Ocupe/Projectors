@@ -13,10 +13,12 @@ logging.basicConfig(
     format='[Projectors Addon]: %(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(name=__file__)
 
+
 class ProjTexture(Enum):
     CHECKER = 'checker_texture'
     COLOR_GRID = 'color_grid'
     CUSTOM_TEXTURE = 'user_texture'
+
 
 resolutions = [
     # 16:10 aspect ratio
@@ -354,6 +356,8 @@ def init_projector(proj_settings, context):
     proj_settings.h_shift = 0.0
     proj_settings.v_shift = 0.0
     proj_settings.projected_color = random_color()
+    proj_settings.resolution = '1920x1080'
+    proj_settings.use_custom_texture_res = True
 
     # Init Projector
     update_throw_ratio(proj_settings, context)
