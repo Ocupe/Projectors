@@ -14,13 +14,13 @@ logging.basicConfig(
 log = logging.getLogger(name=__file__)
 
 
-class ProjTexture(Enum):
+class Textures(Enum):
     CHECKER = 'checker_texture'
-    COLOR_GRID = 'color_grid'
-    CUSTOM_TEXTURE = 'user_texture'
+    COLOR_GRID = 'color_grid_texture'
+    CUSTOM_TEXTURE = 'custom_texture'
 
 
-resolutions = [
+RESOLUTIONS = [
     # 16:10 aspect ratio
     ('1280x800', 'WXGA (1280x800) 16:10', '', 1),
     ('1440x900', 'WXGA+ (1440x900) 16:10', '', 2),
@@ -40,9 +40,9 @@ resolutions = [
     ('1000x1000', 'Square (1000x1000) 1:1', '', 12)
 ]
 
-PROJECTED_OUTPUTS = [('checker_texture', 'Checker', '', 1),
-                     ('color_grid', 'Color Grid', '', 2),
-                     ('user_texture', 'Custom Texture', '', 3)]
+PROJECTED_OUTPUTS = [(Textures.CHECKER.value, 'Checker', '', 1),
+                     (Textures.COLOR_GRID.value, 'Color Grid', '', 2),
+                     (Textures.CUSTOM_TEXTURE.value, 'Custom Texture', '', 3)]
 
 
 class PROJECTOR_OT_change_color_randomly(Operator):
@@ -68,7 +68,7 @@ def create_projector_textures():
     """ This function checks if the needed images exist and if not creates them. """
     log.info('Create needed projection textures.')
     name_template = '_proj.tex.{}'
-    for res in resolutions:
+    for res in RESOLUTIONS:
         img_name = name_template.format(res[0])
         w, h = res[0].split('x')
         if not bpy.data.images.get(img_name):
@@ -222,7 +222,7 @@ def get_resolution(proj_settings, context):
     """ Find out what resolution is currently used and return it.
     Resolution from the dropdown or the resolution from the custom texture.
     """
-    if proj_settings.use_custom_texture_res and proj_settings.projected_texture == ProjTexture.CUSTOM_TEXTURE.value:
+    if proj_settings.use_custom_texture_res and proj_settings.projected_texture == Textures.CUSTOM_TEXTURE.value:
         projector = get_projector(context)
         root_tree = projector.children[0].data.node_tree
         image = root_tree.nodes['Image Texture'].image
@@ -352,7 +352,7 @@ def init_projector(proj_settings, context):
     # # Add custom properties to store projector settings on the camera obj.
     proj_settings.throw_ratio = 0.8
     proj_settings.power = 1000.0
-    proj_settings.projected_texture = 'checker_texture'
+    proj_settings.projected_texture = Textures.CHECKER.value
     proj_settings.h_shift = 0.0
     proj_settings.v_shift = 0.0
     proj_settings.projected_color = random_color()
@@ -391,16 +391,16 @@ def update_projected_texture(proj_settings, context):
 
     # Switch between the three possible cases by relinking some nodes.
     case = proj_settings.projected_texture
-    if case == 'checker_texture':
+    if case == Textures.CHECKER.value:
         mix_node = group_tree.nodes['Mix.001']
         group_tree.links.new(
             mix_node.outputs['Color'], group_output_node.inputs[1])
         root_tree.links.new(group_node.outputs[1], emission_node.inputs[0])
-    elif case == 'color_grid':
+    elif case == Textures.COLOR_GRID.value:
         img_node = group_tree.nodes['Image Texture']
         group_tree.links.new(img_node.outputs[0], group_output_node.inputs[1])
         root_tree.links.new(group_node.outputs[1], emission_node.inputs[0])
-    elif case == 'user_texture':
+    elif case == Textures.CUSTOM_TEXTURE.value:
         custom_tex_node = root_tree.nodes['Image Texture']
         root_tree.links.new(
             custom_tex_node.outputs[0], emission_node.inputs[0])
@@ -437,7 +437,7 @@ class ProjectorSettings(bpy.types.PropertyGroup):
         update=update_power,
         unit='POWER')
     resolution: bpy.props.EnumProperty(
-        items=resolutions,
+        items=RESOLUTIONS,
         default='1920x1080',
         description="Select a Resolution for your Projector",
         update=update_resolution)
@@ -463,7 +463,7 @@ class ProjectorSettings(bpy.types.PropertyGroup):
         update=update_checker_color)
     projected_texture: bpy.props.EnumProperty(
         items=PROJECTED_OUTPUTS,
-        default='checker_texture',
+        default=Textures.CHECKER.value,
         description="What do you to project?",
         update=update_throw_ratio
     )

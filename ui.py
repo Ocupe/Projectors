@@ -1,5 +1,5 @@
 from .helper import get_projectors
-from .projector import resolutions
+from .projector import RESOLUTIONS, Textures
 
 import bpy
 from bpy.types import Panel, PropertyGroup, UIList, Operator
@@ -42,7 +42,7 @@ class PROJECTOR_PT_projector_settings(Panel):
             res_row = box.row()
             res_row.prop(proj_settings, 'resolution',
                          text='Resolution', icon='PRESET')
-            if proj_settings.projected_texture == 'user_texture' and proj_settings.use_custom_texture_res:
+            if proj_settings.projected_texture == Textures.CUSTOM_TEXTURE.value and proj_settings.use_custom_texture_res:
                 res_row.active = False
                 res_row.enabled = False
             else:
@@ -57,7 +57,7 @@ class PROJECTOR_PT_projector_settings(Panel):
                         'projected_texture', text='Project')
 
             # Custom Texture
-            if proj_settings.projected_texture == 'user_texture':
+            if proj_settings.projected_texture == Textures.CUSTOM_TEXTURE.value:
                 box = layout.box()
                 box.prop(proj_settings, 'use_custom_texture_res')
                 node = get_projectors(context, only_selected=True)[
@@ -76,7 +76,7 @@ class PROJECTOR_PT_projected_color(Panel):
     def poll(self, context):
         """ Only show if projected texture is set to  'checker'."""
         projector = context.object
-        return bool(get_projectors(context, only_selected=True)) and projector.proj_settings.projected_texture == 'checker_texture'
+        return bool(get_projectors(context, only_selected=True)) and projector.proj_settings.projected_texture == Textures.CHECKER.value
 
     def draw(self, context):
         projector = context.object
