@@ -45,14 +45,22 @@ class TestProjector(unittest.TestCase):
         self.assertAlmostEqual(self.c.data.angle, 0.9272952180016123, places=6)
         # Test if mapping nodes was updated correctly
         mapping_node = self.s.data.node_tree.nodes['Group'].node_tree.nodes['Mapping.001']
-        self.assertEqual(mapping_node.scale[0], 1)
-        self.assertAlmostEqual(mapping_node.scale[1], 0.5625)
+        if bpy.app.version < (2, 81):
+            self.assertEqual(mapping_node.scale[0], 1)
+            self.assertAlmostEqual(mapping_node.scale[1], 0.5625)
+        else:
+            self.assertEqual(mapping_node.inputs['Scale'].default_value[0], 1)
+            self.assertAlmostEqual(mapping_node.inputs['Scale'].default_value[1], 0.5625)
         # Test 2
         self.c.proj_settings.throw_ratio = 0.8
         self.assertAlmostEqual(self.c.proj_settings.throw_ratio, 0.8)
         self.assertAlmostEqual(self.c.data.angle, 1.1171986306871249, places=6)
-        self.assertEqual(mapping_node.scale[0], 1.250)
-        self.assertAlmostEqual(mapping_node.scale[1], 0.703125)
+        if bpy.app.version < (2, 81):
+            self.assertEqual(mapping_node.scale[0], 1.250)
+            self.assertAlmostEqual(mapping_node.scale[1], 0.703125)
+        else:
+            self.assertEqual(mapping_node.inputs['Scale'].default_value[0], 1.250)
+            self.assertAlmostEqual(mapping_node.inputs['Scale'].default_value[1], 0.703125)
 
     def test_update_lens_shift(self):
         self.c.proj_settings.throw_ratio = 1
@@ -65,8 +73,12 @@ class TestProjector(unittest.TestCase):
         self.assertAlmostEqual(self.c.data.shift_y, 0.1)
         # Check correct update of mapping node
         mapping_node = self.s.data.node_tree.nodes['Group'].node_tree.nodes['Mapping.001']
-        self.assertAlmostEqual(mapping_node.translation[0], 0.1)
-        self.assertAlmostEqual(mapping_node.translation[1], 0.1)
+        if bpy.app.version < (2, 81):
+            self.assertAlmostEqual(mapping_node.translation[0], 0.1)
+            self.assertAlmostEqual(mapping_node.translation[1], 0.1)
+        else:
+            self.assertAlmostEqual(mapping_node.inputs['Location'].default_value[0], 0.1)
+            self.assertAlmostEqual(mapping_node.inputs['Location'].default_value[1], 0.1)
 
     def test_update_power(self):
         new_power = 30

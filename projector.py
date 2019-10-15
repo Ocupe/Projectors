@@ -119,8 +119,12 @@ def add_projector_node_tree_to_spot(spot):
     map_1 = nodes.new('ShaderNodeMapping')
     map_1.vector_type = 'TEXTURE'
     # Flip the image horizontally and vertically to display it the intended way.
-    map_1.scale[0] = -1
-    map_1.scale[1] = -1
+    if bpy.app.version < (2, 81):
+        map_1.scale[0] = -1
+        map_1.scale[1] = -1
+    else:
+        map_1.inputs[3].default_value[0] = -1
+        map_1.inputs[3].default_value[1] = -1
     map_1.location = auto_pos(200)
 
     sep = nodes.new('ShaderNodeSeparateXYZ')
@@ -262,8 +266,12 @@ def update_throw_ratio(proj_settings, context):
     # Update spotlight properties.
     spot = projector.children[0]
     nodes = spot.data.node_tree.nodes['Group'].node_tree.nodes
-    nodes['Mapping.001'].scale[0] = 1 / throw_ratio
-    nodes['Mapping.001'].scale[1] = 1 / throw_ratio * inverted_aspect_ratio
+    if bpy.app.version < (2, 81):
+        nodes['Mapping.001'].scale[0] = 1 / throw_ratio
+        nodes['Mapping.001'].scale[1] = 1 / throw_ratio * inverted_aspect_ratio
+    else:
+        nodes['Mapping.001'].inputs[3].default_value[0] = 1 / throw_ratio
+        nodes['Mapping.001'].inputs[3].default_value[1] = 1 / throw_ratio * inverted_aspect_ratio
 
 
 def update_lens_shift(proj_settings, context):
@@ -283,8 +291,12 @@ def update_lens_shift(proj_settings, context):
     # Update spotlight node setup.
     spot = projector.children[0]
     nodes = spot.data.node_tree.nodes['Group'].node_tree.nodes
-    nodes['Mapping.001'].translation[0] = h_shift / throw_ratio
-    nodes['Mapping.001'].translation[1] = v_shift / throw_ratio
+    if bpy.app.version < (2, 81):
+        nodes['Mapping.001'].translation[0] = h_shift / throw_ratio
+        nodes['Mapping.001'].translation[1] = v_shift / throw_ratio
+    else:
+        nodes['Mapping.001'].inputs[1].default_value[0] = h_shift / throw_ratio
+        nodes['Mapping.001'].inputs[1].default_value[1] = v_shift / throw_ratio
 
 
 def update_resolution(proj_settings, context):
