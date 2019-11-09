@@ -10,7 +10,10 @@ APP_SUPPORT_END = /scripts/addons/Projectors/
 
 build:
 	# Build the Blender addon.
-	zip Projectors ./* -n *.py -i LICENSE README.md 
+	rm Projectors.zip
+	find *.py -print | zip Projectors -@
+	zip Projectors . -xi README.md LICENSE
+	
 
 sync:
 	# Sync the addon on the different Blender versions.
