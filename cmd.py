@@ -1,4 +1,6 @@
 import fire
+import re
+import zipfile
 import os
 from pathlib import Path
 import subprocess
@@ -11,7 +13,7 @@ blender_versions_dir = Path('/Applications/Blender Versions/')
 
 
 def blender_binaries(directory: Path) -> Dict:
-    """Return the name of the Blender .app and the path to the blender binary inside the .app directory."""
+    """Return the names of the Blender .app and the paths to the blender binaries inside the .app directory."""
     assert directory.is_dir()
     app_binaries = {}
     for app in directory.glob('Blender*.app'):
@@ -27,6 +29,31 @@ def blender_binaries(directory: Path) -> Dict:
 
 
 class CMD(object):
+    def release(self):
+        """Create a zipfile release with the current version number defined in bl_info dict in __init__.py"""
+        # Builds dir
+        builds = Path('.', 'builds')
+        if not builds.exists():
+            builds.mkdir()
+
+        # Extract the version number from the __init__.py file.
+        regex = r"\"version\":\s*(\(\d\,\s*\d\,\s*\d\))"
+        with Path('__init__.py').open('r') as f:
+            string = f.read().replace("\n", '')
+            match = re.findall(regex, string, re.MULTILINE)[0]
+            log.debug(match)
+            log.info(f'Create release version: {match}')
+        postfix = '.'.join([str(x) for x in eval(match)])
+
+        # Zip all needed file into a realease.
+        zip_file = builds / f'Projectors {postfix}.zip'
+        with zipfile.ZipFile(zip_file, 'w') as zf:
+            for f in Path('.').glob('*.py'):
+                zf.write(f)
+            zf.write('README.md')
+            zf.write('LICENSE')
+        return f'A realease zipfile was created: {zip_file}'
+
     def test(self, versions_dir=None):
         """ This function allows running the test suite agains different version of Blender.
         !!MacOS only!!
