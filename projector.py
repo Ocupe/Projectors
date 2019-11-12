@@ -66,12 +66,12 @@ class PROJECTOR_OT_change_color_randomly(Operator):
 
 def create_projector_textures():
     """ This function checks if the needed images exist and if not creates them. """
-    log.info('Create needed projection textures.')
     name_template = '_proj.tex.{}'
     for res in RESOLUTIONS:
         img_name = name_template.format(res[0])
         w, h = res[0].split('x')
         if not bpy.data.images.get(img_name):
+            log.debug(f'Create projection texture: {res}')
             bpy.ops.image.new(name=img_name,
                               width=int(w),
                               height=int(h),
