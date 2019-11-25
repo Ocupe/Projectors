@@ -55,6 +55,8 @@ class PROJECTOR_PT_projector_settings(Panel):
             col.prop(proj_settings, 'v_shift', text='Vertical Shift')
             layout.prop(proj_settings,
                         'projected_texture', text='Project')
+            # Pixel Grid
+            box.prop(proj_settings, 'show_pixel_grid')
 
             # Custom Texture
             if proj_settings.projected_texture == Textures.CUSTOM_TEXTURE.value:

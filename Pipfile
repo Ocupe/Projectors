@@ -8,6 +8,7 @@ pylint = "*"
 autopep8 = "*"
 loguru = "*"
 fire = "*"
+rope = "*"
 
 [packages]
 

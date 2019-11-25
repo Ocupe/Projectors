@@ -36,7 +36,7 @@ RESOLUTIONS = [
     ('1600x1200', 'UXGA (1600x1200) 4:3', '', 10),
     # 17:9 aspect ratio
     ('4096x2160', 'Native 4K (4096x2160) 17:9', '', 11),
-    # 1:1 ascpect ratio
+    # 1:1 aspect ratio
     ('1000x1000', 'Square (1000x1000) 1:1', '', 12)
 ]
 
@@ -221,6 +221,17 @@ def add_projector_node_tree_to_spot(spot):
     root_tree.links.new(group.outputs[1], emission.inputs['Color'])
     root_tree.links.new(emission.outputs['Emission'], output.inputs['Surface'])
 
+    # Pixel Grid Setup
+    pixel_grid_group = create_pixel_grid_node_group()
+    pixel_grid_node = spot.data.node_tree.nodes.new('ShaderNodeGroup')
+    pixel_grid_node.node_tree = pixel_grid_group
+    pixel_grid_node.label = "Pixel Grid"
+    pixel_grid_node.name = 'pixel_grid'
+    loc = root_tree.nodes['Emission'].location
+    pixel_grid_node.location = (loc[0], loc[1] - 150)
+
+    root_tree.links.new(group.outputs[0], pixel_grid_node.inputs[1])
+    root_tree.links.new(emission.outputs[0], pixel_grid_node.inputs[0])
 
 def get_resolution(proj_settings, context):
     """ Find out what resolution is currently used and return it.
@@ -271,7 +282,8 @@ def update_throw_ratio(proj_settings, context):
         nodes['Mapping.001'].scale[1] = 1 / throw_ratio * inverted_aspect_ratio
     else:
         nodes['Mapping.001'].inputs[3].default_value[0] = 1 / throw_ratio
-        nodes['Mapping.001'].inputs[3].default_value[1] = 1 / throw_ratio * inverted_aspect_ratio
+        nodes['Mapping.001'].inputs[3].default_value[1] = 1 / \
+            throw_ratio * inverted_aspect_ratio
 
 
 def update_lens_shift(proj_settings, context):
@@ -305,6 +317,7 @@ def update_resolution(proj_settings, context):
     # Change resolution image texture
     nodes['Image Texture'].image = bpy.data.images[f'_proj.tex.{proj_settings.resolution}']
     update_throw_ratio(proj_settings, context)
+    update_pixel_grid(proj_settings, context)
 
 
 def update_checker_color(proj_settings, context):
@@ -320,6 +333,124 @@ def update_power(proj_settings, context):
     spot = get_projector(context).children[0]
     spot.data.energy = proj_settings["power"]
 
+
+def update_pixel_grid(proj_settings, context):
+    """ Update the pixel grid. Meaning, make it visible by linking the right node and updating the resolution. """
+    root_tree = get_projector(context).children[0].data.node_tree
+    nodes = root_tree.nodes
+    if proj_settings.show_pixel_grid:
+        pixel_grid_nodes = nodes['pixel_grid'].node_tree.nodes
+        width, height = get_resolution(proj_settings, context)
+        pixel_grid_nodes['_width'].outputs[0].default_value = width
+        pixel_grid_nodes['_height'].outputs[0].default_value = height
+        root_tree.links.new(nodes['pixel_grid'].outputs[0], nodes['Light Output'].inputs[0])
+    else:
+        root_tree.links.new(nodes['Emission'].outputs[0], nodes['Light Output'].inputs[0])
+
+    
+def create_pixel_grid_node_group():
+    node_group = bpy.data.node_groups.new(
+        '_Projectors-Addon_PixelGrid', 'ShaderNodeTree')
+
+    # Create input/output sockets for the node group.
+    inputs = node_group.inputs
+    inputs.new('NodeSocketShader', 'Shader')
+    inputs.new('NodeSocketVector', 'Vector')
+
+    outputs = node_group.outputs
+    outputs.new('NodeSocketShader', 'Shader')
+
+    nodes = node_group.nodes
+
+    auto_pos = auto_offset()
+
+    group_input = nodes.new('NodeGroupInput')
+    group_input.location = auto_pos(200)
+
+    sepXYZ = nodes.new('ShaderNodeSeparateXYZ')
+    sepXYZ.location = auto_pos(200)
+
+    in_width = nodes.new('ShaderNodeValue')
+    in_width.name = '_width'
+    in_width.label = 'Width'
+    in_width.location = auto_pos(100)
+
+    in_height = nodes.new('ShaderNodeValue')
+    in_height.name = '_height'
+    in_height.label = 'Height'
+    in_height.location = auto_pos(y=-200)
+
+    mul1 = nodes.new('ShaderNodeMath')
+    mul1.operation = 'MULTIPLY'
+    mul1.location = auto_pos(100)
+
+    mul2 = nodes.new('ShaderNodeMath')
+    mul2.operation = 'MULTIPLY'
+    mul2.location = auto_pos(y=-200)
+
+    mod1 = nodes.new('ShaderNodeMath')
+    mod1.operation = 'MODULO'
+    mod1.inputs[1].default_value = 1
+    mod1.location = auto_pos(100)
+
+    mod2 = nodes.new('ShaderNodeMath')
+    mod2.operation = 'MODULO'
+    mod2.inputs[1].default_value = 1
+    mod2.location = auto_pos(y=-200)
+
+    col_ramp1 = nodes.new('ShaderNodeValToRGB')
+    col_ramp1.color_ramp.elements[1].position = 0.025
+    col_ramp1.color_ramp.interpolation = 'CONSTANT'
+    col_ramp1.location = auto_pos(100)
+
+    col_ramp2 = nodes.new('ShaderNodeValToRGB')
+    col_ramp2.color_ramp.elements[1].position = 0.025
+    col_ramp2.color_ramp.interpolation = 'CONSTANT'
+    col_ramp2.location = auto_pos(y=-200)
+
+    mix_rgb = nodes.new('ShaderNodeMixRGB')
+    mix_rgb.use_clamp = True
+    mix_rgb.blend_type = 'MULTIPLY'
+    mix_rgb.inputs[0].default_value = 1
+    mix_rgb.location = auto_pos(200)
+    
+    transparent = nodes.new('ShaderNodeBsdfTransparent')
+    transparent.location = auto_pos(y=-200)
+
+    mix_shader = nodes.new('ShaderNodeMixShader')
+    mix_shader.location = auto_pos(100)
+
+    group_output = nodes.new('NodeGroupOutput')
+    group_output.location = auto_pos(100)
+    
+    # Link Nodes
+    links = node_group.links
+
+    links.new(group_input.outputs[0], mix_shader.inputs[2])
+    links.new(group_input.outputs[1], sepXYZ.inputs[0])
+
+    links.new(in_width.outputs[0], mul1.inputs[1])
+    links.new(in_height.outputs[0], mul2.inputs[1])
+
+    links.new(sepXYZ.outputs[0], mul1.inputs[0])
+    links.new(sepXYZ.outputs[1], mul2.inputs[0])
+
+    links.new(mul1.outputs[0], mod1.inputs[0])
+    links.new(mul2.outputs[0], mod2.inputs[0])
+
+    links.new(mod1.outputs[0], col_ramp1.inputs[0])
+    links.new(mod2.outputs[0], col_ramp2.inputs[0])
+
+    links.new(col_ramp1.outputs[0], mix_rgb.inputs[1])
+    links.new(col_ramp2.outputs[0], mix_rgb.inputs[2])
+
+    links.new(mix_rgb.outputs[0], mix_shader.inputs[0])
+    links.new(transparent.outputs[0], mix_shader.inputs[1])
+
+    links.new(mix_shader.outputs[0], group_output.inputs[0])
+
+    return node_group
+    
 
 def create_projector(context):
     """
@@ -477,8 +608,12 @@ class ProjectorSettings(bpy.types.PropertyGroup):
         items=PROJECTED_OUTPUTS,
         default=Textures.CHECKER.value,
         description="What do you to project?",
-        update=update_throw_ratio
-    )
+        update=update_throw_ratio)
+    show_pixel_grid: bpy.props.BoolProperty(
+        name="Show Pixel Grid",
+        description="When checked the image is divided into a pixel grid with the dimensions of the image resolution.",
+        default=False,
+        update=update_pixel_grid)
 
 
 def register():
