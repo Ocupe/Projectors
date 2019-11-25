@@ -14,6 +14,7 @@ class TestProjector(unittest.TestCase):
         bpy.ops.projector.create()
         self.c = bpy.context.object  # Camera
         self.s = self.c.children[0]  # Spot Light
+        self.nodes = self.s.data.node_tree.nodes
 
     def test_correct_projector_creation(self):
         # Camera
@@ -50,7 +51,8 @@ class TestProjector(unittest.TestCase):
             self.assertAlmostEqual(mapping_node.scale[1], 0.5625)
         else:
             self.assertEqual(mapping_node.inputs['Scale'].default_value[0], 1)
-            self.assertAlmostEqual(mapping_node.inputs['Scale'].default_value[1], 0.5625)
+            self.assertAlmostEqual(
+                mapping_node.inputs['Scale'].default_value[1], 0.5625)
         # Test 2
         self.c.proj_settings.throw_ratio = 0.8
         self.assertAlmostEqual(self.c.proj_settings.throw_ratio, 0.8)
@@ -59,8 +61,10 @@ class TestProjector(unittest.TestCase):
             self.assertEqual(mapping_node.scale[0], 1.250)
             self.assertAlmostEqual(mapping_node.scale[1], 0.703125)
         else:
-            self.assertEqual(mapping_node.inputs['Scale'].default_value[0], 1.250)
-            self.assertAlmostEqual(mapping_node.inputs['Scale'].default_value[1], 0.703125)
+            self.assertEqual(
+                mapping_node.inputs['Scale'].default_value[0], 1.250)
+            self.assertAlmostEqual(
+                mapping_node.inputs['Scale'].default_value[1], 0.703125)
 
     def test_update_lens_shift(self):
         self.c.proj_settings.throw_ratio = 1
@@ -77,8 +81,50 @@ class TestProjector(unittest.TestCase):
             self.assertAlmostEqual(mapping_node.translation[0], 0.1)
             self.assertAlmostEqual(mapping_node.translation[1], 0.1)
         else:
-            self.assertAlmostEqual(mapping_node.inputs['Location'].default_value[0], 0.1)
-            self.assertAlmostEqual(mapping_node.inputs['Location'].default_value[1], 0.1)
+            self.assertAlmostEqual(
+                mapping_node.inputs['Location'].default_value[0], 0.1)
+            self.assertAlmostEqual(
+                mapping_node.inputs['Location'].default_value[1], 0.1)
+
+    def test_pixel_gird_on_off(self):
+        # Turn Pixel Grid on
+        self.c.proj_settings.show_pixel_grid = True
+        links_as_node_names = []
+        for link in self.s.data.node_tree.links:
+            links_as_node_names.append(
+                (link.from_node.name, link.to_node.name))
+        else:
+            self.assertIn(('pixel_grid', 'Light Output'), links_as_node_names)
+            self.assertNotIn(('Emission', 'Light Output'), links_as_node_names)
+        # Turn Pixel Grid off
+        self.c.proj_settings.show_pixel_grid = False
+        links_as_node_names = []
+        for link in self.s.data.node_tree.links:
+            links_as_node_names.append(
+                (link.from_node.name, link.to_node.name))
+        else:
+            self.assertNotIn(('pixel_grid', 'Light Output'),
+                             links_as_node_names)
+            self.assertIn(('Emission', 'Light Output'), links_as_node_names)
+
+    def test_pixel_grid_resolution(self):
+        nodes = self.s.data.node_tree.nodes['pixel_grid'].node_tree.nodes
+        # Check Pixel Grid default resolution
+        width, height = self.c.proj_settings.resolution.split('x')
+        self.assertEqual(
+            nodes['_width'].outputs[0].default_value, float(width))
+        self.assertEqual(
+            nodes['_height'].outputs[0].default_value, float(height))
+        # Check Pixel Grid resolution update
+        x, y = 1024, 768
+        self.c.proj_settings.resolution = f'{x}x{y}'
+        self.assertEqual(
+            nodes['_width'].outputs[0].default_value, float(x))
+        self.assertEqual(
+            nodes['_height'].outputs[0].default_value, float(y))
+        
+
+
 
     def test_update_power(self):
         new_power = 30
@@ -93,7 +139,7 @@ class TestProjector(unittest.TestCase):
 
 def run_tests():
     testLoader = unittest.TestLoader()
-    testLoader.testMethodPrefix = "test"  # <- change to only run selected tests
+    testLoader.testMethodPrefix = "test"
     all_tests = testLoader.discover(".", pattern="test*")
     unittest.TextTestRunner(verbosity=1).run(all_tests)
 

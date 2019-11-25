@@ -338,11 +338,11 @@ def update_pixel_grid(proj_settings, context):
     """ Update the pixel grid. Meaning, make it visible by linking the right node and updating the resolution. """
     root_tree = get_projector(context).children[0].data.node_tree
     nodes = root_tree.nodes
+    pixel_grid_nodes = nodes['pixel_grid'].node_tree.nodes
+    width, height = get_resolution(proj_settings, context)
+    pixel_grid_nodes['_width'].outputs[0].default_value = width
+    pixel_grid_nodes['_height'].outputs[0].default_value = height
     if proj_settings.show_pixel_grid:
-        pixel_grid_nodes = nodes['pixel_grid'].node_tree.nodes
-        width, height = get_resolution(proj_settings, context)
-        pixel_grid_nodes['_width'].outputs[0].default_value = width
-        pixel_grid_nodes['_height'].outputs[0].default_value = height
         root_tree.links.new(nodes['pixel_grid'].outputs[0], nodes['Light Output'].inputs[0])
     else:
         root_tree.links.new(nodes['Emission'].outputs[0], nodes['Light Output'].inputs[0])
@@ -509,6 +509,7 @@ def init_projector(proj_settings, context):
     update_checker_color(proj_settings, context)
     update_lens_shift(proj_settings, context)
     update_power(proj_settings, context)
+    update_pixel_grid(proj_settings, context)
 
 
 class PROJECTOR_OT_create_projector(Operator):
