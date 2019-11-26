@@ -1,7 +1,4 @@
 import logging
-import math
-import os
-import bpy
 from . import ui
 from . import projector
 from . import operators
