@@ -1,4 +1,3 @@
-import logging
 from . import ui
 from . import projector
 from . import operators
@@ -14,10 +13,6 @@ bl_info = {
     "wiki_url": "https://github.com/Ocupe/Projectors/wiki",
     "tracker_url": "https://github.com/Ocupe/Projectors/issues"
 }
-
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)-15s %(levelname)8s %(name)s %(message)s')
-log = logging.getLogger(__name__)
 
 
 def register():

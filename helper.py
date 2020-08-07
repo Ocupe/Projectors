@@ -1,14 +1,10 @@
 # Standard Lib imports
-import logging
 from random import uniform, random, uniform
 
 # Blender imports
 import bpy
 import colorsys
 
-log = logging.getLogger(__file__)
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)-15s %(levelname)8s %(name)s %(message)s')
 
 FALLBACK_WARNING = 'Falling back to pre 2.8 Blender Python API: {}'
 ADDON_ID = 'protor_{}'
