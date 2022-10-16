@@ -1,7 +1,7 @@
 # Projector Add-on for Blender
 Simple projector creation and modification for [Blender](https://www.blender.org/).
 
-![](gifs/Blender&#32;Projectors&#32;Add-on&#32;| Title.jpg)
+![Projector Add-on for Blender title image](/.github/gifs/title.jpg)
 
 ## What this Add-on can do for you
 * Easy creation and modification of physically-based projectors.
@@ -11,16 +11,16 @@ Simple projector creation and modification for [Blender](https://www.blender.org
 
 ## Projectors Add-on in Action
 #### Throw Ratio
-![Throw Ratio](gifs/Blender&#32;Projectors&#32;Add-on&#32;|&#32;Throw&#32;Ratio.gif)
+![Throw Ratio](/.github/gifs/throw_ratio.gif)
 
 #### Lens Shift
-![Lens Shift](gifs/Blender&#32;Projectors&#32;Add-on&#32;|&#32;Lens&#32;Shift.gif)
+![Lens Shift](/.github/gifs/lens_shift.gif)
 
 #### Image Textures & Resolution
-![Image Texture & Resolutions](gifs/Blender&#32;Projectors&#32;Add-on&#32;|&#32;Image&#32;Textures&#32;&&#32;Resolution.gif)
+![Image Texture & Resolutions](/.github/gifs/image_textures_resolution.gif)
 
 #### Random Color
-![Random Color](gifs/Blender&#32;Projectors&#32;Add-on&#32;|&#32;Random&#32;Color.gif)
+![Random Color](/.github/gifs/random_color.gif)
 
 ## Note
 * works only with Blender 2.8 and up
