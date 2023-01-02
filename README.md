@@ -26,7 +26,7 @@ Simple projector creation and modification for [Blender](https://www.blender.org
 * works only with Blender 2.8 and up
 
 ## Installation
-* Download the repo by clicking "Clone or download" and then download as ZIP (don't unpack the file on your computer).
+* Download the repo by clicking the green **Code** button and then **Download ZIP* (don't unpack the file on your computer).
 * Open Blender 2.8.
 * Go to the User Preferences in the Addon tab.
 * Click Install from File and choose the zip file you downloaded.
