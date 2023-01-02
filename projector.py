@@ -167,6 +167,7 @@ def add_projector_node_tree_to_spot(spot):
     checker_tex.location = auto_pos(y=-300)
 
     mix_rgb = nodes.new('ShaderNodeMixRGB')
+    mix_rgb.name = 'Mix.001'
     mix_rgb.inputs[1].default_value = (0, 0, 0, 0)
     mix_rgb.location = auto_pos(200, y=-300)
 
