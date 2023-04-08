@@ -23,7 +23,7 @@ Simple projector creation and modification for [Blender](https://www.blender.org
 ![Random Color](/.github/gifs/random_color.gif)
 
 ## Note
-* works only with Blender 2.8 and up
+* works with Blender 2.8 and up
 
 ## Installation
 * Download the repo by clicking the green **Code** button and then **Download ZIP** (don't unpack the file on your computer).
