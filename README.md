@@ -25,9 +25,12 @@ Simple projector creation and modification for [Blender](https://www.blender.org
 ## Note
 * works with Blender 2.8 and up
 
+## Wiki
+* A growing [wiki](https://github.com/Ocupe/Projectors/wiki) to help users with this add-on. If you have problems or feel that something is missing, please feel free to request more content.
+
 ## Installation
 * Download the repo by clicking the green **Code** button and then **Download ZIP** (don't unpack the file on your computer).
-* Open Blender 2.8.
+* Open Blender.
 * Go to the User Preferences in the Addon tab.
 * Click Install from File and choose the zip file you downloaded.
 * Activate the add-on by clicking on the checkbox.
