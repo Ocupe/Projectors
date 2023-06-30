@@ -296,20 +296,23 @@ def update_lens_shift(proj_settings, context):
     v_shift = proj_settings.get('v_shift', 0.0) / 100
     throw_ratio = proj_settings.get('throw_ratio')
 
+    w, h = get_resolution(proj_settings, context)
+    inverted_aspect_ratio = h/w
+
     # Update the properties of the camera.
     cam = projector
     cam.data.shift_x = h_shift
-    cam.data.shift_y = v_shift
+    cam.data.shift_y = v_shift * inverted_aspect_ratio
 
     # Update spotlight node setup.
     spot = projector.children[0]
     nodes = spot.data.node_tree.nodes['Group'].node_tree.nodes
     if bpy.app.version < (2, 81):
         nodes['Mapping.001'].translation[0] = h_shift / throw_ratio
-        nodes['Mapping.001'].translation[1] = v_shift / throw_ratio
+        nodes['Mapping.001'].translation[1] = v_shift / throw_ratio * inverted_aspect_ratio
     else:
         nodes['Mapping.001'].inputs[1].default_value[0] = h_shift / throw_ratio
-        nodes['Mapping.001'].inputs[1].default_value[1] = v_shift / throw_ratio
+        nodes['Mapping.001'].inputs[1].default_value[1] = v_shift / throw_ratio * inverted_aspect_ratio
 
 
 def update_resolution(proj_settings, context):
