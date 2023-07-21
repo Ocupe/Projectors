@@ -55,6 +55,13 @@ class PROJECTOR_PT_projector_settings(Panel):
             col.prop(proj_settings, 'v_shift', text='Vertical Shift')
             layout.prop(proj_settings,
                         'projected_texture', text='Project')
+            
+            #Keystone
+            col = box.column(align=True)
+            col.prop(proj_settings,
+                     'h_keystone', text="Horizontal Keystone")
+            col.prop(proj_settings,
+                     'v_keystone', text="Vertical Keystone")
             # Pixel Grid
             box.prop(proj_settings, 'show_pixel_grid')
 

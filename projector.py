@@ -287,6 +287,13 @@ def update_throw_ratio(proj_settings, context):
             throw_ratio * inverted_aspect_ratio
 
 
+def update_keystone(proj_settings, context):
+    """
+    Apply the keystone parameters to the camera and texture
+    """
+    projector = get_projector(context)
+    print('On update le keystone calice')
+
 def update_lens_shift(proj_settings, context):
     """
     Apply the shift to the camera and texture.
@@ -603,6 +610,16 @@ class ProjectorSettings(bpy.types.PropertyGroup):
         soft_min=-20, soft_max=20,
         update=update_lens_shift,
         subtype='PERCENTAGE')
+    h_keystone: bpy.props.FloatProperty(
+        name="Horizontal KeyStone",
+        description="Amount of Horizontal Keystone Distortion",
+        soft_min=-1, soft_max=1,
+        update=update_keystone)
+    v_keystone: bpy.props.FloatProperty(
+        name="Vertical KeyStone",
+        description="Amount of Vertical Keystone Distortion",
+        soft_min=-1, soft_max=1,
+        update=update_keystone)
     projected_color: bpy.props.FloatVectorProperty(
         subtype='COLOR',
         update=update_checker_color)
