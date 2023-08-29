@@ -128,21 +128,36 @@ def add_projector_node_tree_to_spot(spot):
     map_1.location = auto_pos(200)
 
     sep = nodes.new('ShaderNodeSeparateXYZ')
-    sep.location = auto_pos(350)
+    sep.location = auto_pos(200, y=-150)
 
-    div_1 = nodes.new('ShaderNodeMath')
-    div_1.operation = 'DIVIDE'
-    div_1.name = ADDON_ID + 'div_01'
-    div_1.location = auto_pos(200)
+    keystone_horizontal = nodes.new('ShaderNodeMath')
+    keystone_horizontal.operation = "MULTIPLY"
+    keystone_horizontal.name = ADDON_ID + 'keystone_horizontal'
+    keystone_horizontal.label = 'Horizontal Keystone'
+    keystone_horizontal.inputs[0].default_value = 0.0
+    keystone_horizontal.location = auto_pos(200, y=-100)
 
-    div_2 = nodes.new('ShaderNodeMath')
-    div_2.operation = 'DIVIDE'
-    div_2.name = ADDON_ID + 'div_02'
-    div_2.location = auto_pos(y=-200)
+    keystone_vertical = nodes.new('ShaderNodeMath')
+    keystone_vertical.operation = "MULTIPLY"
+    keystone_vertical.name = ADDON_ID + 'keystone_vertical'
+    keystone_vertical.label = 'Vertical Keystone'
+    keystone_vertical.inputs[1].default_value = 0.0
+    keystone_vertical.location = auto_pos(y= -300)
 
-    com = nodes.new('ShaderNodeCombineXYZ')
-    com.inputs['Z'].default_value = 1.0
-    com.location = auto_pos(200)
+    add_1 = nodes.new('ShaderNodeMath')
+    add_1.operation = "ADD"
+    add_1.name = ADDON_ID + 'add_01'
+    add_1.location = auto_pos(200, y=-100)
+
+    add_2 = nodes.new('ShaderNodeMath')
+    add_2.operation = "ADD"
+    add_2.name = ADDON_ID + 'add_02'
+    add_2.location = auto_pos(200,y=-150)
+
+    vec_div = nodes.new('ShaderNodeVectorMath')
+    vec_div.operation = "DIVIDE"
+    vec_div.name = ADDON_ID + 'vec_div'
+    vec_div.location = auto_pos(200, y=50)
 
     map_2 = nodes.new('ShaderNodeMapping')
     map_2.location = auto_pos(200)
@@ -197,15 +212,19 @@ def add_projector_node_tree_to_spot(spot):
     tree.links.new(tex.outputs['Normal'], map_1.inputs['Vector'])
     tree.links.new(map_1.outputs['Vector'], sep.inputs['Vector'])
 
-    tree.links.new(sep.outputs[0], div_1.inputs[0])  # X -> value0
-    tree.links.new(sep.outputs[2], div_1.inputs[1])  # Z -> value1
-    tree.links.new(sep.outputs[1], div_2.inputs[0])  # Y -> value0
-    tree.links.new(sep.outputs[2], div_2.inputs[1])  # Z -> value1
+    tree.links.new(sep.outputs[0], keystone_horizontal.inputs[1])
+    tree.links.new(sep.outputs[1], keystone_vertical.inputs[0])
+    tree.links.new(sep.outputs[2], add_1.inputs[1])
 
-    tree.links.new(div_1.outputs[0], com.inputs[0])
-    tree.links.new(div_2.outputs[0], com.inputs[1])
+    tree.links.new(keystone_horizontal.outputs[0], add_1.inputs[0])
+    tree.links.new(keystone_vertical.outputs[0], add_2.inputs[1])
 
-    tree.links.new(com.outputs['Vector'], map_2.inputs['Vector'])
+    tree.links.new(add_1.outputs[0], add_2.inputs[0])
+
+    tree.links.new(map_1.outputs['Vector'], vec_div.inputs[0])
+    tree.links.new(add_2.outputs[0], vec_div.inputs[1])
+
+    tree.links.new(vec_div.outputs['Vector'], map_2.inputs['Vector'])
 
     # Textures
     # a) generated texture
