@@ -132,14 +132,14 @@ def add_projector_node_tree_to_spot(spot):
 
     keystone_horizontal = nodes.new('ShaderNodeMath')
     keystone_horizontal.operation = "MULTIPLY"
-    keystone_horizontal.name = ADDON_ID + 'keystone_horizontal'
+    keystone_horizontal.name = 'keystone_horizontal'
     keystone_horizontal.label = 'Horizontal Keystone'
     keystone_horizontal.inputs[0].default_value = 0.0
     keystone_horizontal.location = auto_pos(200, y=-100)
 
     keystone_vertical = nodes.new('ShaderNodeMath')
     keystone_vertical.operation = "MULTIPLY"
-    keystone_vertical.name = ADDON_ID + 'keystone_vertical'
+    keystone_vertical.name = 'keystone_vertical'
     keystone_vertical.label = 'Vertical Keystone'
     keystone_vertical.inputs[1].default_value = 0.0
     keystone_vertical.location = auto_pos(y= -300)
@@ -311,7 +311,18 @@ def update_keystone(proj_settings, context):
     Apply the keystone parameters to the camera and texture
     """
     projector = get_projector(context)
-    print('On update le keystone calice')
+
+    h_shift = proj_settings.get('h_keystone', 0.0)
+    v_shift = proj_settings.get('v_keystone', 0.0)
+
+    spot = projector.children[0]
+    nodes = spot.data.node_tree.nodes['Group'].node_tree.nodes
+    if bpy.app.version < (2, 81):
+        nodes['keystone_horizontal'].translation[0] = h_shift
+        nodes['keystone_vertical'].translation[1] = v_shift
+    else:
+        nodes['keystone_horizontal'].inputs[0].default_value = h_shift
+        nodes['keystone_vertical'].inputs[1].default_value = v_shift
 
 def update_lens_shift(proj_settings, context):
     """
