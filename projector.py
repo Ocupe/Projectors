@@ -163,6 +163,11 @@ def add_projector_node_tree_to_spot(spot):
     map_2.location = auto_pos(200)
     map_2.vector_type = 'TEXTURE'
 
+    scale = nodes.new('ShaderNodeVectorMath')
+    scale.operation = "SCALE"
+    scale.name ='post_scale'
+    scale.location = auto_pos(200)
+
     add = nodes.new('ShaderNodeMixRGB')
     add.blend_type = 'ADD'
     add.inputs[0].default_value = 1
@@ -225,10 +230,11 @@ def add_projector_node_tree_to_spot(spot):
     tree.links.new(add_2.outputs[0], vec_div.inputs[1])
 
     tree.links.new(vec_div.outputs['Vector'], map_2.inputs['Vector'])
+    tree.links.new(map_2.outputs['Vector'], scale.inputs[0])
 
     # Textures
     # a) generated texture
-    tree.links.new(map_2.outputs['Vector'], add.inputs['Color1'])
+    tree.links.new(scale.outputs['Vector'], add.inputs['Color1'])
     tree.links.new(add.outputs['Color'], img.inputs['Vector'])
     tree.links.new(add.outputs['Color'], group_output_node.inputs[0])
     # b) checker texture
