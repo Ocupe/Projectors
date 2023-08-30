@@ -675,7 +675,7 @@ class ProjectorSettings(bpy.types.PropertyGroup):
     post_scale: bpy.props.FloatProperty(
         name="Scale Factor",
         description="Global scale factor of the projected image",
-        min=0.0,
+        min=0.001,
         default=1.0,
         update=update_post_scale
     )
