@@ -312,17 +312,20 @@ def update_keystone(proj_settings, context):
     """
     projector = get_projector(context)
 
-    h_shift = proj_settings.get('h_keystone', 0.0)
-    v_shift = proj_settings.get('v_keystone', 0.0)
+    h_keystone = proj_settings.get('h_keystone', 0.0)
+    v_keystone = proj_settings.get('v_keystone', 0.0)
 
     spot = projector.children[0]
     nodes = spot.data.node_tree.nodes['Group'].node_tree.nodes
     if bpy.app.version < (2, 81):
-        nodes['keystone_horizontal'].translation[0] = h_shift
-        nodes['keystone_vertical'].translation[1] = v_shift
+        nodes['keystone_horizontal'].translation[0] = h_keystone
+        nodes['keystone_vertical'].translation[1] = v_keystone
     else:
-        nodes['keystone_horizontal'].inputs[0].default_value = h_shift
-        nodes['keystone_vertical'].inputs[1].default_value = v_shift
+        nodes['keystone_horizontal'].inputs[0].default_value = h_keystone
+        nodes['keystone_vertical'].inputs[1].default_value = v_keystone
+
+def update_post_scale(proj_settings, context):
+    print('on update le post scale')
 
 def update_lens_shift(proj_settings, context):
     """
@@ -650,6 +653,13 @@ class ProjectorSettings(bpy.types.PropertyGroup):
         description="Amount of Vertical Keystone Distortion",
         soft_min=-1, soft_max=1,
         update=update_keystone)
+    post_scale: bpy.props.FloatProperty(
+        name="Scale Factor",
+        description="Global scale factor of the projected image",
+        min=0.0,
+        default=1.0,
+        update=update_post_scale
+    )
     projected_color: bpy.props.FloatVectorProperty(
         subtype='COLOR',
         update=update_checker_color)

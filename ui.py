@@ -62,6 +62,11 @@ class PROJECTOR_PT_projector_settings(Panel):
                      'h_keystone', text="Horizontal Keystone")
             col.prop(proj_settings,
                      'v_keystone', text="Vertical Keystone")
+            
+            #Post Projection Scale
+            col = box.column(align=True)
+            col.prop(proj_settings,
+                     "post_scale", text="Scale Adjustment Factor")
             # Pixel Grid
             box.prop(proj_settings, 'show_pixel_grid')
 
