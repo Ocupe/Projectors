@@ -314,7 +314,7 @@ def update_throw_ratio(proj_settings, context):
 
 def update_keystone(proj_settings, context):
     """
-    Apply the keystone parameters to the camera and texture
+    Apply the keystone parameters to the texture
     """
     projector = get_projector(context)
 
@@ -331,7 +331,20 @@ def update_keystone(proj_settings, context):
         nodes['keystone_vertical'].inputs[1].default_value = v_keystone
 
 def update_post_scale(proj_settings, context):
-    print('on update le post scale')
+    """
+    Apply the post scale parameters to the texture
+    """
+
+    projector = get_projector(context)
+    post_scale = 1 / proj_settings.get('post_scale', 0.0)
+
+    spot = projector.children[0]
+    nodes = spot.data.node_tree.nodes['Group'].node_tree.nodes
+    if bpy.app.version < (2, 81):
+        nodes['post_scale'].translation[3] = post_scale
+    else:
+        nodes['post_scale'].inputs[3].default_value = post_scale
+
 
 def update_lens_shift(proj_settings, context):
     """
