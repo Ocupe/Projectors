@@ -50,18 +50,17 @@ class PROJECTOR_PT_projector_settings(Panel):
                 res_row.enabled = True
             # Lens Shift
             col = box.column(align=True)
-            col.prop(proj_settings,
-                     'h_shift', text='Horizontal Shift')
-            col.prop(proj_settings, 'v_shift', text='Vertical Shift')
+            col.prop(proj_settings, 'h_shift', text='H Shift')
+            col.prop(proj_settings, 'v_shift', text='V Shift')
             layout.prop(proj_settings,
                         'projected_texture', text='Project')
             
             #Keystone
             col = box.column(align=True)
             col.prop(proj_settings,
-                     'h_keystone', text="Horizontal Keystone")
+                     'h_keystone', text="H Keystone")
             col.prop(proj_settings,
-                     'v_keystone', text="Vertical Keystone")
+                     'v_keystone', text="V Keystone")
             
             #Post Projection Scale
             col = box.column(align=True)
