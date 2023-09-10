@@ -522,10 +522,14 @@ def init_projector(proj_settings, context):
 
 
 class PROJECTOR_OT_create_projector(Operator):
-    """ Create Projector """
+    """Create Projector"""
     bl_idname = 'projector.create'
     bl_label = 'Create a new Projector'
     bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT'
 
     def execute(self, context):
         projector = create_projector(context)
@@ -560,6 +564,7 @@ def update_projected_texture(proj_settings, context):
 
 
 class PROJECTOR_OT_delete_projector(Operator):
+    """Delete Projector"""
     bl_idname = 'projector.delete'
     bl_label = 'Delete Projector'
     bl_options = {'REGISTER', 'UNDO'}
