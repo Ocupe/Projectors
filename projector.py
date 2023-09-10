@@ -286,6 +286,11 @@ def update_throw_ratio(proj_settings, context):
         nodes['Mapping.001'].inputs[3].default_value[1] = 1 / \
             throw_ratio * inverted_aspect_ratio
 
+    # Update lens shift because it depends on the throw ratio.
+    update_lens_shift(proj_settings, context)
+
+    
+
 
 def update_lens_shift(proj_settings, context):
     """
