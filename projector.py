@@ -96,9 +96,13 @@ def add_projector_node_tree_to_spot(spot):
     node_group = bpy.data.node_groups.new('_Projector', 'ShaderNodeTree')
 
     # Create output sockets for the node group.
-    output = node_group.outputs
-    output.new('NodeSocketVector', 'texture vector')
-    output.new('NodeSocketColor', 'color')
+    if(bpy.app.version >= (4, 0)):
+        node_group.interface.new_socket('texture vector',  in_out="OUTPUT", socket_type='NodeSocketVector')
+        node_group.interface.new_socket('color', in_out="OUTPUT", socket_type='NodeSocketColor')
+    else:
+        output = node_group.outputs
+        output.new('NodeSocketVector', 'texture vector')
+        output.new('NodeSocketColor', 'color')
 
     # # Inside Group Node #
     # #####################
@@ -115,6 +119,12 @@ def add_projector_node_tree_to_spot(spot):
 
     tex = nodes.new('ShaderNodeTexCoord')
     tex.location = auto_pos(200)
+
+    geo = nodes.new('ShaderNodeNewGeometry')
+    geo.location = auto_pos(0, -300)
+    vec_transform = nodes.new('ShaderNodeVectorTransform')
+    vec_transform.location = auto_pos(200)
+    vec_transform.vector_type = 'NORMAL'
 
     map_1 = nodes.new('ShaderNodeMapping')
     map_1.vector_type = 'TEXTURE'
@@ -194,7 +204,11 @@ def add_projector_node_tree_to_spot(spot):
     # ##############
 
     # Link inside group node
-    tree.links.new(tex.outputs['Normal'], map_1.inputs['Vector'])
+    if(bpy.app.version >= (4, 0)):
+        tree.links.new(geo.outputs['Incoming'], vec_transform.inputs['Vector'])
+        tree.links.new(vec_transform.outputs['Vector'], map_1.inputs['Vector'])
+    else:
+        tree.links.new(tex.outputs['Normal'], map_1.inputs['Vector'])
     tree.links.new(map_1.outputs['Vector'], sep.inputs['Vector'])
 
     tree.links.new(sep.outputs[0], div_1.inputs[0])  # X -> value0
@@ -218,8 +232,8 @@ def add_projector_node_tree_to_spot(spot):
     tree.links.new(checker_tex.outputs['Color'], mix_rgb.inputs[2])
 
     # Link in root
-    root_tree.links.new(group.outputs[0], user_texture.inputs['Vector'])
-    root_tree.links.new(group.outputs[1], emission.inputs['Color'])
+    root_tree.links.new(group.outputs['texture vector'], user_texture.inputs['Vector'])
+    root_tree.links.new(group.outputs['color'], emission.inputs['Color'])
     root_tree.links.new(emission.outputs['Emission'], output.inputs['Surface'])
 
     # Pixel Grid Setup
@@ -362,12 +376,18 @@ def create_pixel_grid_node_group():
         '_Projectors-Addon_PixelGrid', 'ShaderNodeTree')
 
     # Create input/output sockets for the node group.
-    inputs = node_group.inputs
-    inputs.new('NodeSocketShader', 'Shader')
-    inputs.new('NodeSocketVector', 'Vector')
+    if(bpy.app.version >= (4, 0)):
+        node_group.interface.new_socket('Shader', socket_type='NodeSocketShader')
+        node_group.interface.new_socket('Vector', socket_type='NodeSocketVector')
 
-    outputs = node_group.outputs
-    outputs.new('NodeSocketShader', 'Shader')
+        node_group.interface.new_socket('Shader', in_out='OUTPUT', socket_type='NodeSocketShader')
+    else:
+        inputs = node_group.inputs
+        inputs.new('NodeSocketShader', 'Shader')
+        inputs.new('NodeSocketVector', 'Vector')
+
+        outputs = node_group.outputs
+        outputs.new('NodeSocketShader', 'Shader')
 
     nodes = node_group.nodes
 
@@ -478,7 +498,7 @@ def create_projector(context):
     spot.scale = (.01, .01, .01)
     spot.data.spot_size = math.pi
     spot.data.spot_blend = 0
-    spot.data.shadow_soft_size = 0.00000001
+    spot.data.shadow_soft_size = 0.0
     spot.hide_select = True
     spot[ADDON_ID.format('spot')] = True
     spot.data.cycles.use_multiple_importance_sampling = False
