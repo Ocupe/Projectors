@@ -485,7 +485,7 @@ def create_projector(context):
     spot.scale = (.01, .01, .01)
     spot.data.spot_size = math.pi
     spot.data.spot_blend = 0
-    spot.data.shadow_soft_size = 0.00000001
+    spot.data.shadow_soft_size = 0.0
     spot.hide_select = True
     spot[ADDON_ID.format('spot')] = True
     spot.data.cycles.use_multiple_importance_sampling = False
