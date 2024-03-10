@@ -96,8 +96,13 @@ def add_projector_node_tree_to_spot(spot):
     node_group = bpy.data.node_groups.new('_Projector', 'ShaderNodeTree')
 
     # Create output sockets for the node group.
-    node_group.interface.new_socket('TextureVector',  in_out="OUTPUT", socket_type='NodeSocketVector')
-    node_group.interface.new_socket('Color', in_out="OUTPUT", socket_type='NodeSocketColor')
+    if(bpy.app.version >= (4, 0)):
+        node_group.interface.new_socket('texture vector',  in_out="OUTPUT", socket_type='NodeSocketVector')
+        node_group.interface.new_socket('color', in_out="OUTPUT", socket_type='NodeSocketColor')
+    else:
+        output = node_group.outputs
+        output.new('NodeSocketVector', 'texture vector')
+        output.new('NodeSocketColor', 'color')
 
     # # Inside Group Node #
     # #####################
@@ -227,8 +232,8 @@ def add_projector_node_tree_to_spot(spot):
     tree.links.new(checker_tex.outputs['Color'], mix_rgb.inputs[2])
 
     # Link in root
-    root_tree.links.new(group.outputs['TextureVector'], user_texture.inputs['Vector'])
-    root_tree.links.new(group.outputs['Color'], emission.inputs['Color'])
+    root_tree.links.new(group.outputs['texture vector'], user_texture.inputs['Vector'])
+    root_tree.links.new(group.outputs['color'], emission.inputs['Color'])
     root_tree.links.new(emission.outputs['Emission'], output.inputs['Surface'])
 
     # Pixel Grid Setup
@@ -371,10 +376,18 @@ def create_pixel_grid_node_group():
         '_Projectors-Addon_PixelGrid', 'ShaderNodeTree')
 
     # Create input/output sockets for the node group.
-    node_group.interface.new_socket('PixelGridOutput_Shader', socket_type='NodeSocketShader')
-    node_group.interface.new_socket('PixelGridOutput_Vector', socket_type='NodeSocketVector')
+    if(bpy.app.version >= (4, 0)):
+        node_group.interface.new_socket('Shader', socket_type='NodeSocketShader')
+        node_group.interface.new_socket('Vector', socket_type='NodeSocketVector')
 
-    node_group.interface.new_socket('PixelGridOutput_Shader', in_out='OUTPUT', socket_type='NodeSocketShader')
+        node_group.interface.new_socket('Shader', in_out='OUTPUT', socket_type='NodeSocketShader')
+    else:
+        inputs = node_group.inputs
+        inputs.new('NodeSocketShader', 'Shader')
+        inputs.new('NodeSocketVector', 'Vector')
+
+        outputs = node_group.outputs
+        outputs.new('NodeSocketShader', 'Shader')
 
     nodes = node_group.nodes
 
