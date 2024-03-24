@@ -138,25 +138,45 @@ def add_projector_node_tree_to_spot(spot):
     map_1.location = auto_pos(200)
 
     sep = nodes.new('ShaderNodeSeparateXYZ')
-    sep.location = auto_pos(350)
+    sep.location = auto_pos(200, y=-150)
 
-    div_1 = nodes.new('ShaderNodeMath')
-    div_1.operation = 'DIVIDE'
-    div_1.name = ADDON_ID + 'div_01'
-    div_1.location = auto_pos(200)
+    keystone_horizontal = nodes.new('ShaderNodeMath')
+    keystone_horizontal.operation = "MULTIPLY"
+    keystone_horizontal.name = 'keystone_horizontal'
+    keystone_horizontal.label = 'Horizontal Keystone'
+    keystone_horizontal.inputs[0].default_value = 0.0
+    keystone_horizontal.location = auto_pos(200, y=-100)
 
-    div_2 = nodes.new('ShaderNodeMath')
-    div_2.operation = 'DIVIDE'
-    div_2.name = ADDON_ID + 'div_02'
-    div_2.location = auto_pos(y=-200)
+    keystone_vertical = nodes.new('ShaderNodeMath')
+    keystone_vertical.operation = "MULTIPLY"
+    keystone_vertical.name = 'keystone_vertical'
+    keystone_vertical.label = 'Vertical Keystone'
+    keystone_vertical.inputs[1].default_value = 0.0
+    keystone_vertical.location = auto_pos(y= -300)
 
-    com = nodes.new('ShaderNodeCombineXYZ')
-    com.inputs['Z'].default_value = 1.0
-    com.location = auto_pos(200)
+    add_1 = nodes.new('ShaderNodeMath')
+    add_1.operation = "ADD"
+    add_1.name = ADDON_ID + 'add_01'
+    add_1.location = auto_pos(200, y=-100)
+
+    add_2 = nodes.new('ShaderNodeMath')
+    add_2.operation = "ADD"
+    add_2.name = ADDON_ID + 'add_02'
+    add_2.location = auto_pos(200,y=-150)
+
+    vec_div = nodes.new('ShaderNodeVectorMath')
+    vec_div.operation = "DIVIDE"
+    vec_div.name = ADDON_ID + 'vec_div'
+    vec_div.location = auto_pos(200, y=50)
 
     map_2 = nodes.new('ShaderNodeMapping')
     map_2.location = auto_pos(200)
     map_2.vector_type = 'TEXTURE'
+
+    scale = nodes.new('ShaderNodeVectorMath')
+    scale.operation = "SCALE"
+    scale.name ='post_scale'
+    scale.location = auto_pos(200)
 
     add = nodes.new('ShaderNodeMixRGB')
     add.blend_type = 'ADD'
@@ -211,19 +231,24 @@ def add_projector_node_tree_to_spot(spot):
         tree.links.new(tex.outputs['Normal'], map_1.inputs['Vector'])
     tree.links.new(map_1.outputs['Vector'], sep.inputs['Vector'])
 
-    tree.links.new(sep.outputs[0], div_1.inputs[0])  # X -> value0
-    tree.links.new(sep.outputs[2], div_1.inputs[1])  # Z -> value1
-    tree.links.new(sep.outputs[1], div_2.inputs[0])  # Y -> value0
-    tree.links.new(sep.outputs[2], div_2.inputs[1])  # Z -> value1
+    tree.links.new(sep.outputs[0], keystone_horizontal.inputs[1])
+    tree.links.new(sep.outputs[1], keystone_vertical.inputs[0])
+    tree.links.new(sep.outputs[2], add_1.inputs[1])
 
-    tree.links.new(div_1.outputs[0], com.inputs[0])
-    tree.links.new(div_2.outputs[0], com.inputs[1])
+    tree.links.new(keystone_horizontal.outputs[0], add_1.inputs[0])
+    tree.links.new(keystone_vertical.outputs[0], add_2.inputs[1])
 
-    tree.links.new(com.outputs['Vector'], map_2.inputs['Vector'])
+    tree.links.new(add_1.outputs[0], add_2.inputs[0])
+
+    tree.links.new(map_1.outputs['Vector'], vec_div.inputs[0])
+    tree.links.new(add_2.outputs[0], vec_div.inputs[1])
+
+    tree.links.new(vec_div.outputs['Vector'], map_2.inputs['Vector'])
+    tree.links.new(map_2.outputs['Vector'], scale.inputs[0])
 
     # Textures
     # a) generated texture
-    tree.links.new(map_2.outputs['Vector'], add.inputs['Color1'])
+    tree.links.new(scale.outputs['Vector'], add.inputs['Color1'])
     tree.links.new(add.outputs['Color'], img.inputs['Vector'])
     tree.links.new(add.outputs['Color'], group_output_node.inputs[0])
     # b) checker texture
@@ -304,6 +329,40 @@ def update_throw_ratio(proj_settings, context):
     update_lens_shift(proj_settings, context)
 
     
+
+
+def update_keystone(proj_settings, context):
+    """
+    Apply the keystone parameters to the texture
+    """
+    projector = get_projector(context)
+
+    h_keystone = proj_settings.get('h_keystone', 0.0)
+    v_keystone = proj_settings.get('v_keystone', 0.0)
+
+    spot = projector.children[0]
+    nodes = spot.data.node_tree.nodes['Group'].node_tree.nodes
+    if bpy.app.version < (2, 81):
+        nodes['keystone_horizontal'].translation[0] = h_keystone
+        nodes['keystone_vertical'].translation[1] = v_keystone
+    else:
+        nodes['keystone_horizontal'].inputs[0].default_value = h_keystone
+        nodes['keystone_vertical'].inputs[1].default_value = v_keystone
+
+def update_post_scale(proj_settings, context):
+    """
+    Apply the post scale parameters to the texture
+    """
+
+    projector = get_projector(context)
+    post_scale = 1 / proj_settings.get('post_scale', 0.0)
+
+    spot = projector.children[0]
+    nodes = spot.data.node_tree.nodes['Group'].node_tree.nodes
+    if bpy.app.version < (2, 81):
+        nodes['post_scale'].translation[3] = post_scale
+    else:
+        nodes['post_scale'].inputs[3].default_value = post_scale
 
 
 def update_lens_shift(proj_settings, context):
@@ -636,6 +695,23 @@ class ProjectorSettings(bpy.types.PropertyGroup):
         soft_min=-20, soft_max=20,
         update=update_lens_shift,
         subtype='PERCENTAGE')
+    h_keystone: bpy.props.FloatProperty(
+        name="Horizontal KeyStone",
+        description="Amount of Horizontal Keystone Distortion",
+        soft_min=-1, soft_max=1,
+        update=update_keystone)
+    v_keystone: bpy.props.FloatProperty(
+        name="Vertical KeyStone",
+        description="Amount of Vertical Keystone Distortion",
+        soft_min=-1, soft_max=1,
+        update=update_keystone)
+    post_scale: bpy.props.FloatProperty(
+        name="Scale Factor",
+        description="Global scale factor of the projected image",
+        min=0.001,
+        default=1.0,
+        update=update_post_scale
+    )
     projected_color: bpy.props.FloatVectorProperty(
         subtype='COLOR',
         update=update_checker_color)
