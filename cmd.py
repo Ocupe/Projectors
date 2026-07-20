@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 from loguru import logger as log
 import tempfile
-from distutils.dir_util import copy_tree
+from setuptools._distutils.dir_util import copy_tree
 from typing import Dict
 
 blender_versions_dir = Path('/Applications/Blender Versions/')
